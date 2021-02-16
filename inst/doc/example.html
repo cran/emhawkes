@@ -1,65 +1,129 @@
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
 
 <head>
 
 <meta charset="utf-8" />
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 
-<meta name="author" content="Vignette Author" />
+<meta name="author" content="Kyungsub Lee" />
 
-<meta name="date" content="2018-09-03" />
+<meta name="date" content="2021-02-16" />
 
-<title>Vignette Title</title>
+<title>Example : emhakwes package</title>
 
+<script src="data:application/javascript;base64,Ly8gUGFuZG9jIDIuOSBhZGRzIGF0dHJpYnV0ZXMgb24gYm90aCBoZWFkZXIgYW5kIGRpdi4gV2UgcmVtb3ZlIHRoZSBmb3JtZXIgKHRvCi8vIGJlIGNvbXBhdGlibGUgd2l0aCB0aGUgYmVoYXZpb3Igb2YgUGFuZG9jIDwgMi44KS4KZG9jdW1lbnQuYWRkRXZlbnRMaXN0ZW5lcignRE9NQ29udGVudExvYWRlZCcsIGZ1bmN0aW9uKGUpIHsKICB2YXIgaHMgPSBkb2N1bWVudC5xdWVyeVNlbGVjdG9yQWxsKCJkaXYuc2VjdGlvbltjbGFzcyo9J2xldmVsJ10gPiA6Zmlyc3QtY2hpbGQiKTsKICB2YXIgaSwgaCwgYTsKICBmb3IgKGkgPSAwOyBpIDwgaHMubGVuZ3RoOyBpKyspIHsKICAgIGggPSBoc1tpXTsKICAgIGlmICghL15oWzEtNl0kL2kudGVzdChoLnRhZ05hbWUpKSBjb250aW51ZTsgIC8vIGl0IHNob3VsZCBiZSBhIGhlYWRlciBoMS1oNgogICAgYSA9IGguYXR0cmlidXRlczsKICAgIHdoaWxlIChhLmxlbmd0aCA+IDApIGgucmVtb3ZlQXR0cmlidXRlKGFbMF0ubmFtZSk7CiAgfQp9KTsK"></script>
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
 
 
 <style type="text/css">code{white-space: pre;}</style>
-<style type="text/css">
-div.sourceCode { overflow-x: auto; }
-table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
-  margin: 0; padding: 0; vertical-align: baseline; border: none; }
-table.sourceCode { width: 100%; line-height: 100%; }
-td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
-td.sourceCode { padding-left: 5px; }
-code > span.kw { color: #007020; font-weight: bold; } /* Keyword */
-code > span.dt { color: #902000; } /* DataType */
-code > span.dv { color: #40a070; } /* DecVal */
-code > span.bn { color: #40a070; } /* BaseN */
-code > span.fl { color: #40a070; } /* Float */
-code > span.ch { color: #4070a0; } /* Char */
-code > span.st { color: #4070a0; } /* String */
-code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
-code > span.ot { color: #007020; } /* Other */
-code > span.al { color: #ff0000; font-weight: bold; } /* Alert */
-code > span.fu { color: #06287e; } /* Function */
-code > span.er { color: #ff0000; font-weight: bold; } /* Error */
-code > span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
-code > span.cn { color: #880000; } /* Constant */
-code > span.sc { color: #4070a0; } /* SpecialChar */
-code > span.vs { color: #4070a0; } /* VerbatimString */
-code > span.ss { color: #bb6688; } /* SpecialString */
-code > span.im { } /* Import */
-code > span.va { color: #19177c; } /* Variable */
-code > span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
-code > span.op { color: #666666; } /* Operator */
-code > span.bu { } /* BuiltIn */
-code > span.ex { } /* Extension */
-code > span.pp { color: #bc7a00; } /* Preprocessor */
-code > span.at { color: #7d9029; } /* Attribute */
-code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
-code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
-code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
-code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+<style type="text/css" data-origin="pandoc">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+
 </style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    for (var j = 0; j < rules.length; j++) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") continue;
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') continue;
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
 
 
 
-<link href="data:text/css;charset=utf-8,body%20%7B%0Abackground%2Dcolor%3A%20%23fff%3B%0Amargin%3A%201em%20auto%3B%0Amax%2Dwidth%3A%20700px%3B%0Aoverflow%3A%20visible%3B%0Apadding%2Dleft%3A%202em%3B%0Apadding%2Dright%3A%202em%3B%0Afont%2Dfamily%3A%20%22Open%20Sans%22%2C%20%22Helvetica%20Neue%22%2C%20Helvetica%2C%20Arial%2C%20sans%2Dserif%3B%0Afont%2Dsize%3A%2014px%3B%0Aline%2Dheight%3A%201%2E35%3B%0A%7D%0A%23header%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0A%23TOC%20%7B%0Aclear%3A%20both%3B%0Amargin%3A%200%200%2010px%2010px%3B%0Apadding%3A%204px%3B%0Awidth%3A%20400px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Aborder%2Dradius%3A%205px%3B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Afont%2Dsize%3A%2013px%3B%0Aline%2Dheight%3A%201%2E3%3B%0A%7D%0A%23TOC%20%2Etoctitle%20%7B%0Afont%2Dweight%3A%20bold%3B%0Afont%2Dsize%3A%2015px%3B%0Amargin%2Dleft%3A%205px%3B%0A%7D%0A%23TOC%20ul%20%7B%0Apadding%2Dleft%3A%2040px%3B%0Amargin%2Dleft%3A%20%2D1%2E5em%3B%0Amargin%2Dtop%3A%205px%3B%0Amargin%2Dbottom%3A%205px%3B%0A%7D%0A%23TOC%20ul%20ul%20%7B%0Amargin%2Dleft%3A%20%2D2em%3B%0A%7D%0A%23TOC%20li%20%7B%0Aline%2Dheight%3A%2016px%3B%0A%7D%0Atable%20%7B%0Amargin%3A%201em%20auto%3B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dcolor%3A%20%23DDDDDD%3B%0Aborder%2Dstyle%3A%20outset%3B%0Aborder%2Dcollapse%3A%20collapse%3B%0A%7D%0Atable%20th%20%7B%0Aborder%2Dwidth%3A%202px%3B%0Apadding%3A%205px%3B%0Aborder%2Dstyle%3A%20inset%3B%0A%7D%0Atable%20td%20%7B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dstyle%3A%20inset%3B%0Aline%2Dheight%3A%2018px%3B%0Apadding%3A%205px%205px%3B%0A%7D%0Atable%2C%20table%20th%2C%20table%20td%20%7B%0Aborder%2Dleft%2Dstyle%3A%20none%3B%0Aborder%2Dright%2Dstyle%3A%20none%3B%0A%7D%0Atable%20thead%2C%20table%20tr%2Eeven%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Ap%20%7B%0Amargin%3A%200%2E5em%200%3B%0A%7D%0Ablockquote%20%7B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Apadding%3A%200%2E25em%200%2E75em%3B%0A%7D%0Ahr%20%7B%0Aborder%2Dstyle%3A%20solid%3B%0Aborder%3A%20none%3B%0Aborder%2Dtop%3A%201px%20solid%20%23777%3B%0Amargin%3A%2028px%200%3B%0A%7D%0Adl%20%7B%0Amargin%2Dleft%3A%200%3B%0A%7D%0Adl%20dd%20%7B%0Amargin%2Dbottom%3A%2013px%3B%0Amargin%2Dleft%3A%2013px%3B%0A%7D%0Adl%20dt%20%7B%0Afont%2Dweight%3A%20bold%3B%0A%7D%0Aul%20%7B%0Amargin%2Dtop%3A%200%3B%0A%7D%0Aul%20li%20%7B%0Alist%2Dstyle%3A%20circle%20outside%3B%0A%7D%0Aul%20ul%20%7B%0Amargin%2Dbottom%3A%200%3B%0A%7D%0Apre%2C%20code%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0Aborder%2Dradius%3A%203px%3B%0Acolor%3A%20%23333%3B%0Awhite%2Dspace%3A%20pre%2Dwrap%3B%20%0A%7D%0Apre%20%7B%0Aborder%2Dradius%3A%203px%3B%0Amargin%3A%205px%200px%2010px%200px%3B%0Apadding%3A%2010px%3B%0A%7D%0Apre%3Anot%28%5Bclass%5D%29%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Acode%20%7B%0Afont%2Dfamily%3A%20Consolas%2C%20Monaco%2C%20%27Courier%20New%27%2C%20monospace%3B%0Afont%2Dsize%3A%2085%25%3B%0A%7D%0Ap%20%3E%20code%2C%20li%20%3E%20code%20%7B%0Apadding%3A%202px%200px%3B%0A%7D%0Adiv%2Efigure%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0Aimg%20%7B%0Abackground%2Dcolor%3A%20%23FFFFFF%3B%0Apadding%3A%202px%3B%0Aborder%3A%201px%20solid%20%23DDDDDD%3B%0Aborder%2Dradius%3A%203px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Amargin%3A%200%205px%3B%0A%7D%0Ah1%20%7B%0Amargin%2Dtop%3A%200%3B%0Afont%2Dsize%3A%2035px%3B%0Aline%2Dheight%3A%2040px%3B%0A%7D%0Ah2%20%7B%0Aborder%2Dbottom%3A%204px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Apadding%2Dbottom%3A%202px%3B%0Afont%2Dsize%3A%20145%25%3B%0A%7D%0Ah3%20%7B%0Aborder%2Dbottom%3A%202px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Afont%2Dsize%3A%20120%25%3B%0A%7D%0Ah4%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23f7f7f7%3B%0Amargin%2Dleft%3A%208px%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Ah5%2C%20h6%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23ccc%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Aa%20%7B%0Acolor%3A%20%230033dd%3B%0Atext%2Ddecoration%3A%20none%3B%0A%7D%0Aa%3Ahover%20%7B%0Acolor%3A%20%236666ff%3B%20%7D%0Aa%3Avisited%20%7B%0Acolor%3A%20%23800080%3B%20%7D%0Aa%3Avisited%3Ahover%20%7B%0Acolor%3A%20%23BB00BB%3B%20%7D%0Aa%5Bhref%5E%3D%22http%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0Aa%5Bhref%5E%3D%22https%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0A%0Acode%20%3E%20span%2Ekw%20%7B%20color%3A%20%23555%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Edt%20%7B%20color%3A%20%23902000%3B%20%7D%20%0Acode%20%3E%20span%2Edv%20%7B%20color%3A%20%2340a070%3B%20%7D%20%0Acode%20%3E%20span%2Ebn%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Efl%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Ech%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Est%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Eco%20%7B%20color%3A%20%23888888%3B%20font%2Dstyle%3A%20italic%3B%20%7D%20%0Acode%20%3E%20span%2Eot%20%7B%20color%3A%20%23007020%3B%20%7D%20%0Acode%20%3E%20span%2Eal%20%7B%20color%3A%20%23ff0000%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Efu%20%7B%20color%3A%20%23900%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%20code%20%3E%20span%2Eer%20%7B%20color%3A%20%23a61717%3B%20background%2Dcolor%3A%20%23e3d2d2%3B%20%7D%20%0A" rel="stylesheet" type="text/css" />
+
+<link rel="stylesheet" href="data:text/css,body%20%7B%0Abackground%2Dcolor%3A%20%23fff%3B%0Amargin%3A%201em%20auto%3B%0Amax%2Dwidth%3A%20700px%3B%0Aoverflow%3A%20visible%3B%0Apadding%2Dleft%3A%202em%3B%0Apadding%2Dright%3A%202em%3B%0Afont%2Dfamily%3A%20%22Open%20Sans%22%2C%20%22Helvetica%20Neue%22%2C%20Helvetica%2C%20Arial%2C%20sans%2Dserif%3B%0Afont%2Dsize%3A%2014px%3B%0Aline%2Dheight%3A%201%2E35%3B%0A%7D%0A%23TOC%20%7B%0Aclear%3A%20both%3B%0Amargin%3A%200%200%2010px%2010px%3B%0Apadding%3A%204px%3B%0Awidth%3A%20400px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Aborder%2Dradius%3A%205px%3B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Afont%2Dsize%3A%2013px%3B%0Aline%2Dheight%3A%201%2E3%3B%0A%7D%0A%23TOC%20%2Etoctitle%20%7B%0Afont%2Dweight%3A%20bold%3B%0Afont%2Dsize%3A%2015px%3B%0Amargin%2Dleft%3A%205px%3B%0A%7D%0A%23TOC%20ul%20%7B%0Apadding%2Dleft%3A%2040px%3B%0Amargin%2Dleft%3A%20%2D1%2E5em%3B%0Amargin%2Dtop%3A%205px%3B%0Amargin%2Dbottom%3A%205px%3B%0A%7D%0A%23TOC%20ul%20ul%20%7B%0Amargin%2Dleft%3A%20%2D2em%3B%0A%7D%0A%23TOC%20li%20%7B%0Aline%2Dheight%3A%2016px%3B%0A%7D%0Atable%20%7B%0Amargin%3A%201em%20auto%3B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dcolor%3A%20%23DDDDDD%3B%0Aborder%2Dstyle%3A%20outset%3B%0Aborder%2Dcollapse%3A%20collapse%3B%0A%7D%0Atable%20th%20%7B%0Aborder%2Dwidth%3A%202px%3B%0Apadding%3A%205px%3B%0Aborder%2Dstyle%3A%20inset%3B%0A%7D%0Atable%20td%20%7B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dstyle%3A%20inset%3B%0Aline%2Dheight%3A%2018px%3B%0Apadding%3A%205px%205px%3B%0A%7D%0Atable%2C%20table%20th%2C%20table%20td%20%7B%0Aborder%2Dleft%2Dstyle%3A%20none%3B%0Aborder%2Dright%2Dstyle%3A%20none%3B%0A%7D%0Atable%20thead%2C%20table%20tr%2Eeven%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Ap%20%7B%0Amargin%3A%200%2E5em%200%3B%0A%7D%0Ablockquote%20%7B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Apadding%3A%200%2E25em%200%2E75em%3B%0A%7D%0Ahr%20%7B%0Aborder%2Dstyle%3A%20solid%3B%0Aborder%3A%20none%3B%0Aborder%2Dtop%3A%201px%20solid%20%23777%3B%0Amargin%3A%2028px%200%3B%0A%7D%0Adl%20%7B%0Amargin%2Dleft%3A%200%3B%0A%7D%0Adl%20dd%20%7B%0Amargin%2Dbottom%3A%2013px%3B%0Amargin%2Dleft%3A%2013px%3B%0A%7D%0Adl%20dt%20%7B%0Afont%2Dweight%3A%20bold%3B%0A%7D%0Aul%20%7B%0Amargin%2Dtop%3A%200%3B%0A%7D%0Aul%20li%20%7B%0Alist%2Dstyle%3A%20circle%20outside%3B%0A%7D%0Aul%20ul%20%7B%0Amargin%2Dbottom%3A%200%3B%0A%7D%0Apre%2C%20code%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0Aborder%2Dradius%3A%203px%3B%0Acolor%3A%20%23333%3B%0Awhite%2Dspace%3A%20pre%2Dwrap%3B%20%0A%7D%0Apre%20%7B%0Aborder%2Dradius%3A%203px%3B%0Amargin%3A%205px%200px%2010px%200px%3B%0Apadding%3A%2010px%3B%0A%7D%0Apre%3Anot%28%5Bclass%5D%29%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Acode%20%7B%0Afont%2Dfamily%3A%20Consolas%2C%20Monaco%2C%20%27Courier%20New%27%2C%20monospace%3B%0Afont%2Dsize%3A%2085%25%3B%0A%7D%0Ap%20%3E%20code%2C%20li%20%3E%20code%20%7B%0Apadding%3A%202px%200px%3B%0A%7D%0Adiv%2Efigure%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0Aimg%20%7B%0Abackground%2Dcolor%3A%20%23FFFFFF%3B%0Apadding%3A%202px%3B%0Aborder%3A%201px%20solid%20%23DDDDDD%3B%0Aborder%2Dradius%3A%203px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Amargin%3A%200%205px%3B%0A%7D%0Ah1%20%7B%0Amargin%2Dtop%3A%200%3B%0Afont%2Dsize%3A%2035px%3B%0Aline%2Dheight%3A%2040px%3B%0A%7D%0Ah2%20%7B%0Aborder%2Dbottom%3A%204px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Apadding%2Dbottom%3A%202px%3B%0Afont%2Dsize%3A%20145%25%3B%0A%7D%0Ah3%20%7B%0Aborder%2Dbottom%3A%202px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Afont%2Dsize%3A%20120%25%3B%0A%7D%0Ah4%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23f7f7f7%3B%0Amargin%2Dleft%3A%208px%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Ah5%2C%20h6%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23ccc%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Aa%20%7B%0Acolor%3A%20%230033dd%3B%0Atext%2Ddecoration%3A%20none%3B%0A%7D%0Aa%3Ahover%20%7B%0Acolor%3A%20%236666ff%3B%20%7D%0Aa%3Avisited%20%7B%0Acolor%3A%20%23800080%3B%20%7D%0Aa%3Avisited%3Ahover%20%7B%0Acolor%3A%20%23BB00BB%3B%20%7D%0Aa%5Bhref%5E%3D%22http%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0Aa%5Bhref%5E%3D%22https%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0A%0Acode%20%3E%20span%2Ekw%20%7B%20color%3A%20%23555%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Edt%20%7B%20color%3A%20%23902000%3B%20%7D%20%0Acode%20%3E%20span%2Edv%20%7B%20color%3A%20%2340a070%3B%20%7D%20%0Acode%20%3E%20span%2Ebn%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Efl%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Ech%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Est%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Eco%20%7B%20color%3A%20%23888888%3B%20font%2Dstyle%3A%20italic%3B%20%7D%20%0Acode%20%3E%20span%2Eot%20%7B%20color%3A%20%23007020%3B%20%7D%20%0Acode%20%3E%20span%2Eal%20%7B%20color%3A%20%23ff0000%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Efu%20%7B%20color%3A%20%23900%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Eer%20%7B%20color%3A%20%23a61717%3B%20background%2Dcolor%3A%20%23e3d2d2%3B%20%7D%20%0A" type="text/css" />
+
+
+
 
 </head>
 
@@ -68,100 +132,105 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 
 
-<h1 class="title toc-ignore">Vignette Title</h1>
-<h4 class="author"><em>Vignette Author</em></h4>
-<h4 class="date"><em>2018-09-03</em></h4>
+<h1 class="title toc-ignore">Example : emhakwes package</h1>
+<h4 class="author">Kyungsub Lee</h4>
+<h4 class="date">2021-02-16</h4>
 
 
 
 <div id="univariate-hawkes-process" class="section level3">
 <h3>Univariate Hawkes process</h3>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(emhawkes)</code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(emhawkes)</span></code></pre></div>
 <p>This subsection explaines how to construct, simulate, and estimate a univariate Hawkes model. First, create a <code>hspec</code> which defines the Hawkes model. S4 class <code>hspec</code> contains slots of model parameters, <code>mu</code>, <code>alpha</code>, <code>beta</code>, <code>dimens</code>, <code>rmark</code>, and <code>impact</code>.</p>
 <p>The parameters of the model, <code>mu</code>, <code>alpha</code>, <code>beta</code>, are defined by matrices. The following is an example of a univariate model (without mark).</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">set.seed</span>(<span class="dv">1107</span>)
-mu1 &lt;-<span class="st"> </span><span class="fl">0.3</span>; alpha1 &lt;-<span class="st"> </span><span class="fl">1.2</span>; beta1 &lt;-<span class="st"> </span><span class="fl">1.5</span>
-hspec1 &lt;-<span class="st"> </span><span class="kw">new</span>(<span class="st">&quot;hspec&quot;</span>, <span class="dt">mu=</span>mu1, <span class="dt">alpha=</span>alpha1, <span class="dt">beta=</span>beta1)
-<span class="kw">show</span>(hspec1)
-<span class="co">#&gt; An object of class &quot;hspec&quot;</span>
-<span class="co">#&gt; Slot &quot;mu&quot;:</span>
-<span class="co">#&gt;      [,1]</span>
-<span class="co">#&gt; [1,]  0.3</span>
-<span class="co">#&gt; </span>
-<span class="co">#&gt; Slot &quot;alpha&quot;:</span>
-<span class="co">#&gt;      [,1]</span>
-<span class="co">#&gt; [1,]  1.2</span>
-<span class="co">#&gt; </span>
-<span class="co">#&gt; Slot &quot;beta&quot;:</span>
-<span class="co">#&gt;      [,1]</span>
-<span class="co">#&gt; [1,]  1.5</span>
-<span class="co">#&gt; </span>
-<span class="co">#&gt; Slot &quot;dimens&quot;:</span>
-<span class="co">#&gt; [1] 1</span>
-<span class="co">#&gt; </span>
-<span class="co">#&gt; Slot &quot;rmark&quot;:</span>
-<span class="co">#&gt; function (...) </span>
-<span class="co">#&gt; 1</span>
-<span class="co">#&gt; &lt;environment: 0x000000001cb4bbe8&gt;</span>
-<span class="co">#&gt; </span>
-<span class="co">#&gt; Slot &quot;impact&quot;:</span>
-<span class="co">#&gt; NULL</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1107</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>mu1 <span class="ot">&lt;-</span> <span class="fl">0.3</span>; alpha1 <span class="ot">&lt;-</span> <span class="fl">1.2</span>; beta1 <span class="ot">&lt;-</span> <span class="fl">1.5</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>hspec1 <span class="ot">&lt;-</span> <span class="fu">new</span>(<span class="st">&quot;hspec&quot;</span>, <span class="at">mu=</span>mu1, <span class="at">alpha=</span>alpha1, <span class="at">beta=</span>beta1)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="fu">show</span>(hspec1)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; An object of class &quot;hspec&quot;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Slot &quot;mu&quot;:</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;      [,1]</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1,]  0.3</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Slot &quot;alpha&quot;:</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;      [,1]</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1,]  1.2</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Slot &quot;beta&quot;:</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;      [,1]</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1,]  1.5</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Slot &quot;dimens&quot;:</span></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 1</span></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Slot &quot;rmark&quot;:</span></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; function (...) </span></span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1</span></span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; &lt;environment: 0x0000000014fdcac8&gt;</span></span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Slot &quot;dmark&quot;:</span></span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; NULL</span></span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Slot &quot;impact&quot;:</span></span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; NULL</span></span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Slot &quot;type_col_map&quot;:</span></span>
+<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; NULL</span></span></code></pre></div>
 <p>The function <code>hsim</code> implements simulation where the input arguments are <code>hspec</code>, <code>size</code> and the initial values of intensity <code>lambda</code> and Hawkes processes <code>N</code>. If the initial values of <code>lambda</code> are omitted, the internally determined initial values are used. The default initial value of <code>N</code> is zero.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">res1 &lt;-<span class="st"> </span><span class="kw">hsim</span>(hspec1, <span class="dt">size=</span><span class="dv">100</span>)
-<span class="kw">summary</span>(res1)
-<span class="co">#&gt; ------------------------------------`------</span>
-<span class="co">#&gt; Simulation result of marked Hawkes model.</span>
-<span class="co">#&gt; Realized path (with right continuous representation):</span>
-<span class="co">#&gt;        arrival N1 lambda1</span>
-<span class="co">#&gt;  [1,]  0.00000  0 0.90000</span>
-<span class="co">#&gt;  [2,]  0.97794  1 0.43838</span>
-<span class="co">#&gt;  [3,]  1.09001  2 1.43128</span>
-<span class="co">#&gt;  [4,]  1.28999  3 2.02711</span>
-<span class="co">#&gt;  [5,]  1.53225  4 2.33527</span>
-<span class="co">#&gt;  [6,]  1.65001  5 3.01139</span>
-<span class="co">#&gt;  [7,]  2.51807  6 1.36377</span>
-<span class="co">#&gt;  [8,]  2.81710  7 1.74553</span>
-<span class="co">#&gt;  [9,]  2.87547  8 2.72378</span>
-<span class="co">#&gt; [10,]  3.16415  9 2.65016</span>
-<span class="co">#&gt; [11,]  3.51378 10 2.40131</span>
-<span class="co">#&gt; [12,]  4.22355 11 1.43843</span>
-<span class="co">#&gt; [13,] 16.96752 12 0.30000</span>
-<span class="co">#&gt; [14,] 17.71654 13 0.69015</span>
-<span class="co">#&gt; [15,] 19.10293 14 0.49874</span>
-<span class="co">#&gt; [16,] 24.06354 15 0.30082</span>
-<span class="co">#&gt; [17,] 24.09256 16 1.44967</span>
-<span class="co">#&gt; [18,] 28.40173 17 0.30366</span>
-<span class="co">#&gt; [19,] 28.53743 18 1.28198</span>
-<span class="co">#&gt; [20,] 28.56702 19 2.38725</span>
-<span class="co">#&gt; ... with 80 more rows </span>
-<span class="co">#&gt; ------------------------------------------</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>res1 <span class="ot">&lt;-</span> <span class="fu">hsim</span>(hspec1, <span class="at">size=</span><span class="dv">100</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(res1)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ------------------------------------`------</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Simulation result of marked Hawkes model.</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Realized path (with right continuous representation):</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;        arrival N1 lambda1</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  [1,]  0.00000  0 0.90000</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  [2,]  0.97794  1 0.43838</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  [3,]  1.09001  2 1.43128</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  [4,]  1.28999  3 2.02711</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  [5,]  1.53225  4 2.33527</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  [6,]  1.65001  5 3.01139</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  [7,]  2.51807  6 1.36377</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  [8,]  2.81710  7 1.74553</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  [9,]  2.87547  8 2.72378</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [10,]  3.16415  9 2.65016</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [11,]  3.51378 10 2.40131</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [12,]  4.22355 11 1.43843</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [13,] 16.96752 12 0.30000</span></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [14,] 17.71654 13 0.69015</span></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [15,] 19.10293 14 0.49874</span></span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [16,] 24.06354 15 0.30082</span></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [17,] 24.09256 16 1.44967</span></span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [18,] 28.40173 17 0.30366</span></span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [19,] 28.53743 18 1.28198</span></span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [20,] 28.56702 19 2.38725</span></span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ... with 80 more rows </span></span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ------------------------------------------</span></span></code></pre></div>
 <p>The results of <code>hsim</code> is an S3 class <code>hreal</code> which consists of <code>hspec</code>, <code>inter_arrival</code>, <code>arrival</code>, <code>type</code>, <code>mark</code>, <code>N</code>, <code>Nc</code>, <code>lambda</code>, <code>lambda_component</code>, <code>rambda</code>, <code>rambda\_component</code>. The components <code>inter_arrival</code>, <code>type</code>, <code>mark</code>, <code>N</code>, <code>Nc</code>, <code>lambda</code>, <code>lambda_component</code>, <code>rambda</code>, <code>rambda_component</code> can be excessed during simulation and estimation. The column names of <code>N</code> are <code>N1</code>, <code>N2</code>, <code>N3</code> and so on. Similarly, the column names of <code>lambda</code> are <code>lambda1</code>, <code>lambda2</code>, <code>lambda3</code> and so on. The column names of <code>lambda_component</code> are <code>lambda_component11</code>, <code>lambda_component12</code>, <code>lambda_component13</code> and so on. <code>inter_arrival</code>, <code>type</code>, <code>mark</code>, <code>N</code>, <code>Nc</code> start at zero. Using <code>summary</code> function, one can print the first 20 elements of <code>arrival</code>, <code>N</code> and <code>lambda</code>.</p>
 <p><code>hspec</code> is the model specification, <code>inter_arrival</code> is the inter-arrival time of every event, and <code>arrival</code> is the cumulative sum of <code>inter_arrival</code>. <code>type</code> is the type of events, i.e., <span class="math inline">\(i\)</span> for <span class="math inline">\(N_i\)</span>, and <code>mark</code> is a numeric vector which represents additional information for the event. <code>lambda</code> represents <span class="math inline">\(\bm{\lambda}\)</span> which is the left continuous and right limit version. The right continuous version of intensity is <code>rambda</code>. <code>lambda_component</code> represents <span class="math inline">\(\lambda_{ij}\)</span> and <code>rambda_component</code> is the right continuous version.</p>
 <p>The log-likelihood function is computed by <code>logLik</code> method. In this case, the inter-arrival times and <code>hspec</code> are inputs of the function.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">logLik</span>(hspec1, <span class="dt">inter_arrival =</span> res1<span class="op">$</span>inter_arrival)
-<span class="co">#&gt; [1] -28.09111</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">logLik</span>(hspec1, <span class="at">inter_arrival =</span> res1<span class="sc">$</span>inter_arrival)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;           [,1]</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1,] -28.09111</span></span></code></pre></div>
 <p>The likelihood estimation is performed using <code>mhfit</code> function. The specification of the initial values of the parameters, <code>mhspec0</code> is needed. In the following example, <code>hspec0</code> is set to be <code>hspec1</code>, which is defined previously, for simplicity, but any candidates for the starting value of the numerical procedure can be used.</p>
 <p>Note that only <code>inter_arrival</code> is needed. (Indeed, for more precise simulation, <code>lambda0</code>, the inital value of lambda compoment, should be specified. If not, internally determined initial values are set.)</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">mu0 &lt;-<span class="st"> </span><span class="fl">0.5</span>; alpha0 &lt;-<span class="st"> </span><span class="fl">1.0</span>; beta0 &lt;-<span class="st"> </span><span class="fl">1.8</span>
-hspec0 &lt;-<span class="st"> </span><span class="kw">new</span>(<span class="st">&quot;hspec&quot;</span>, <span class="dt">mu=</span>mu0, <span class="dt">alpha=</span>alpha0, <span class="dt">beta=</span>beta0)
-mle &lt;-<span class="st"> </span><span class="kw">hfit</span>(hspec0, <span class="dt">inter_arrival =</span> res1<span class="op">$</span>inter_arrival)
-<span class="co">#&gt;    mu1 alpha1  beta1 </span>
-<span class="co">#&gt;    0.5    1.0    1.8</span>
-<span class="kw">summary</span>(mle)
-<span class="co">#&gt; --------------------------------------------</span>
-<span class="co">#&gt; Maximum Likelihood estimation</span>
-<span class="co">#&gt; BFGS maximization, 44 iterations</span>
-<span class="co">#&gt; Return code 0: successful convergence </span>
-<span class="co">#&gt; Log-Likelihood: -26.68325 </span>
-<span class="co">#&gt; 3  free parameters</span>
-<span class="co">#&gt; Estimates:</span>
-<span class="co">#&gt;        Estimate Std. error t value  Pr(&gt; t)    </span>
-<span class="co">#&gt; mu1     0.29680    0.09286   3.196  0.00139 ** </span>
-<span class="co">#&gt; alpha1  1.75745    0.40859   4.301 1.70e-05 ***</span>
-<span class="co">#&gt; beta1   2.14300    0.49441   4.334 1.46e-05 ***</span>
-<span class="co">#&gt; ---</span>
-<span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span>
-<span class="co">#&gt; --------------------------------------------</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>mu0 <span class="ot">&lt;-</span> <span class="fl">0.5</span>; alpha0 <span class="ot">&lt;-</span> <span class="fl">1.0</span>; beta0 <span class="ot">&lt;-</span> <span class="fl">1.8</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>hspec0 <span class="ot">&lt;-</span> <span class="fu">new</span>(<span class="st">&quot;hspec&quot;</span>, <span class="at">mu=</span>mu0, <span class="at">alpha=</span>alpha0, <span class="at">beta=</span>beta0)</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>mle <span class="ot">&lt;-</span> <span class="fu">hfit</span>(hspec0, <span class="at">inter_arrival =</span> res1<span class="sc">$</span>inter_arrival)</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(mle)</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; --------------------------------------------</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Maximum Likelihood estimation</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; BFGS maximization, 44 iterations</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Return code 0: successful convergence </span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Log-Likelihood: -26.68325 </span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3  free parameters</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Estimates:</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;        Estimate Std. error t value  Pr(&gt; t)    </span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; mu1     0.29680    0.09286   3.196  0.00139 ** </span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; alpha1  1.75745    0.40859   4.301 1.70e-05 ***</span></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; beta1   2.14300    0.49441   4.334 1.46e-05 ***</span></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ---</span></span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</span></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; --------------------------------------------</span></span></code></pre></div>
 </div>
 <div id="bivariate-hawkes-model" class="section level3">
 <h3>Bivariate Hawkes model</h3>
@@ -169,327 +238,326 @@ mle &lt;-<span class="st"> </span><span class="kw">hfit</span>(hspec0, <span cla
 <p><span class="math display">\[ \lambda_1(t) = \mu_1 + \lambda_{11}(t) + \lambda_{12}(t) \]</span></p>
 <p><span class="math display">\[ \lambda_2(t) = \mu_2 + \lambda_{21}(t) + \lambda_{22}(t) \]</span></p>
 <p><span class="math inline">\(\lambda_{ij}\)</span> called lambda components and <code>lambda0</code> is the time zero values of <span class="math inline">\(lambda_{ij}\)</span>, i.e., <span class="math inline">\(\lambda_{ij}(0)\)</span>. <code>lambda0</code> can be omitted and then internally determined initial values are used.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">mu2 &lt;-<span class="st"> </span><span class="kw">matrix</span>(<span class="kw">c</span>(<span class="fl">0.2</span>), <span class="dt">nrow =</span> <span class="dv">2</span>)
-alpha2 &lt;-<span class="st"> </span><span class="kw">matrix</span>(<span class="kw">c</span>(<span class="fl">0.5</span>, <span class="fl">0.9</span>, <span class="fl">0.9</span>, <span class="fl">0.5</span>), <span class="dt">nrow =</span> <span class="dv">2</span>, <span class="dt">byrow =</span> <span class="ot">TRUE</span>)
-beta2 &lt;-<span class="st"> </span><span class="kw">matrix</span>(<span class="kw">c</span>(<span class="fl">2.25</span>, <span class="fl">2.25</span>, <span class="fl">2.25</span>, <span class="fl">2.25</span>), <span class="dt">nrow =</span> <span class="dv">2</span>, <span class="dt">byrow =</span> <span class="ot">TRUE</span>)
-lambda0 &lt;-<span class="st"> </span><span class="kw">matrix</span>(<span class="kw">c</span>(<span class="fl">0.1</span>, <span class="fl">0.1</span>, <span class="fl">0.1</span>, <span class="fl">0.1</span>), <span class="dt">nrow =</span> <span class="dv">2</span>, <span class="dt">byrow =</span> <span class="ot">TRUE</span>)
-hspec2 &lt;-<span class="st"> </span><span class="kw">new</span>(<span class="st">&quot;hspec&quot;</span>, <span class="dt">mu=</span>mu2, <span class="dt">alpha=</span>alpha2, <span class="dt">beta=</span>beta2)
-<span class="kw">print</span>(hspec2)
-<span class="co">#&gt; An object of class &quot;hspec&quot;</span>
-<span class="co">#&gt; Slot &quot;mu&quot;:</span>
-<span class="co">#&gt;      [,1]</span>
-<span class="co">#&gt; [1,]  0.2</span>
-<span class="co">#&gt; [2,]  0.2</span>
-<span class="co">#&gt; </span>
-<span class="co">#&gt; Slot &quot;alpha&quot;:</span>
-<span class="co">#&gt;      [,1] [,2]</span>
-<span class="co">#&gt; [1,]  0.5  0.9</span>
-<span class="co">#&gt; [2,]  0.9  0.5</span>
-<span class="co">#&gt; </span>
-<span class="co">#&gt; Slot &quot;beta&quot;:</span>
-<span class="co">#&gt;      [,1] [,2]</span>
-<span class="co">#&gt; [1,] 2.25 2.25</span>
-<span class="co">#&gt; [2,] 2.25 2.25</span>
-<span class="co">#&gt; </span>
-<span class="co">#&gt; Slot &quot;dimens&quot;:</span>
-<span class="co">#&gt; [1] 2</span>
-<span class="co">#&gt; </span>
-<span class="co">#&gt; Slot &quot;rmark&quot;:</span>
-<span class="co">#&gt; function (...) </span>
-<span class="co">#&gt; 1</span>
-<span class="co">#&gt; &lt;bytecode: 0x000000001d5ad458&gt;</span>
-<span class="co">#&gt; &lt;environment: 0x000000001cc98b30&gt;</span>
-<span class="co">#&gt; </span>
-<span class="co">#&gt; Slot &quot;impact&quot;:</span>
-<span class="co">#&gt; NULL</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>mu2 <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="fl">0.2</span>), <span class="at">nrow =</span> <span class="dv">2</span>)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>alpha2 <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="fl">0.5</span>, <span class="fl">0.9</span>, <span class="fl">0.9</span>, <span class="fl">0.5</span>), <span class="at">nrow =</span> <span class="dv">2</span>, <span class="at">byrow =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>beta2 <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="fl">2.25</span>, <span class="fl">2.25</span>, <span class="fl">2.25</span>, <span class="fl">2.25</span>), <span class="at">nrow =</span> <span class="dv">2</span>, <span class="at">byrow =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>lambda0 <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="fl">0.1</span>, <span class="fl">0.1</span>, <span class="fl">0.1</span>, <span class="fl">0.1</span>), <span class="at">nrow =</span> <span class="dv">2</span>, <span class="at">byrow =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>hspec2 <span class="ot">&lt;-</span> <span class="fu">new</span>(<span class="st">&quot;hspec&quot;</span>, <span class="at">mu=</span>mu2, <span class="at">alpha=</span>alpha2, <span class="at">beta=</span>beta2)</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(hspec2)</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; An object of class &quot;hspec&quot;</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Slot &quot;mu&quot;:</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;      [,1]</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1,]  0.2</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [2,]  0.2</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Slot &quot;alpha&quot;:</span></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;      [,1] [,2]</span></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1,]  0.5  0.9</span></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [2,]  0.9  0.5</span></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Slot &quot;beta&quot;:</span></span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;      [,1] [,2]</span></span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1,] 2.25 2.25</span></span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [2,] 2.25 2.25</span></span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Slot &quot;dimens&quot;:</span></span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 2</span></span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Slot &quot;rmark&quot;:</span></span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; function (...) </span></span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1</span></span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; &lt;bytecode: 0x000000001d5681f8&gt;</span></span>
+<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; &lt;environment: 0x0000000016347bb0&gt;</span></span>
+<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Slot &quot;dmark&quot;:</span></span>
+<span id="cb6-33"><a href="#cb6-33" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; NULL</span></span>
+<span id="cb6-34"><a href="#cb6-34" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-35"><a href="#cb6-35" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Slot &quot;impact&quot;:</span></span>
+<span id="cb6-36"><a href="#cb6-36" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; NULL</span></span>
+<span id="cb6-37"><a href="#cb6-37" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-38"><a href="#cb6-38" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Slot &quot;type_col_map&quot;:</span></span>
+<span id="cb6-39"><a href="#cb6-39" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; NULL</span></span></code></pre></div>
 <p>To simulate, use function <code>mhsim</code>.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">res2 &lt;-<span class="st"> </span><span class="kw">hsim</span>(hspec2,  <span class="dt">size=</span><span class="dv">1000</span>)
-<span class="co">#&gt; Warning in hsim(hspec2, size = 1000): The initial values for intensity processes are not provided. Internally determined initial values are used.</span>
-<span class="kw">summary</span>(res2)
-<span class="co">#&gt; ------------------------------------`------</span>
-<span class="co">#&gt; Simulation result of marked Hawkes model.</span>
-<span class="co">#&gt; Realized path (with right continuous representation):</span>
-<span class="co">#&gt;       arrival N1 N2 lambda1 lambda2</span>
-<span class="co">#&gt;  [1,]  0.0000  0  0 0.52941 0.52941</span>
-<span class="co">#&gt;  [2,]  2.4745  1  0 0.20126 0.20126</span>
-<span class="co">#&gt;  [3,]  2.5307  2  0 0.64180 0.99436</span>
-<span class="co">#&gt;  [4,]  2.9229  2  1 0.58968 0.90105</span>
-<span class="co">#&gt;  [5,]  5.8320  3  1 0.20185 0.20173</span>
-<span class="co">#&gt;  [6,]  7.3825  4  1 0.21533 0.22754</span>
-<span class="co">#&gt;  [7,]  7.6700  4  2 0.46986 0.68572</span>
-<span class="co">#&gt;  [8,]  8.2456  4  3 0.52043 0.46999</span>
-<span class="co">#&gt;  [9,]  8.3886  4  4 1.08460 0.75811</span>
-<span class="co">#&gt; [10,]  8.5108  5  4 1.55553 1.00371</span>
-<span class="co">#&gt; [11,]  8.6228  6  4 1.64232 1.52431</span>
-<span class="co">#&gt; [12,]  8.8592  6  5 1.34104 1.50670</span>
-<span class="co">#&gt; [13,]  8.9916  7  5 1.71515 1.54119</span>
-<span class="co">#&gt; [14,]  9.0341  8  5 2.03128 2.23670</span>
-<span class="co">#&gt; [15,]  9.0367  8  6 2.51809 3.12008</span>
-<span class="co">#&gt; [16,]  9.0584  9  6 3.26436 3.45670</span>
-<span class="co">#&gt; [17,]  9.6773 10  6 1.08553 1.23269</span>
-<span class="co">#&gt; [18,]  9.7228 10  7 1.45073 1.94465</span>
-<span class="co">#&gt; [19,]  9.7569 11  7 2.19206 2.27905</span>
-<span class="co">#&gt; [20,]  9.8171 11  8 2.37611 2.80136</span>
-<span class="co">#&gt; ... with 980 more rows </span>
-<span class="co">#&gt; ------------------------------------------</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>res2 <span class="ot">&lt;-</span> <span class="fu">hsim</span>(hspec2,  <span class="at">size=</span><span class="dv">1000</span>)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in hsim(hspec2, size = 1000): The initial values for intensity processes are not provided. Internally determined initial values are used.</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(res2)</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ------------------------------------`------</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Simulation result of marked Hawkes model.</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Realized path (with right continuous representation):</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;       arrival N1 N2 lambda1 lambda2</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  [1,]  0.0000  0  0 0.52941 0.52941</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  [2,]  2.4745  1  0 0.20126 0.20126</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  [3,]  2.5048  1  1 0.66824 1.04190</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  [4,]  2.6013  1  2 1.30125 1.28004</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  [5,]  2.6762  1  3 1.89085 1.53497</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  [6,]  2.6925  1  4 2.69755 1.96890</span></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  [7,]  3.0421  2  4 1.74738 1.23334</span></span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  [8,]  3.2604  3  4 1.45274 1.38296</span></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  [9,]  3.3405  4  4 1.66374 1.93951</span></span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [10,]  3.4042  4  5 1.90135 2.48684</span></span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [11,]  3.4359  4  6 2.62234 2.79506</span></span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [12,]  3.6821  5  6 2.10926 1.97865</span></span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [13,]  3.9600  6  6 1.48929 1.63345</span></span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [14,]  4.1582  6  7 1.34558 1.69398</span></span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [15,]  4.3863  7  7 1.42426 1.39337</span></span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [16,]  4.5365  8  7 1.42972 1.69297</span></span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [17,]  4.9093  8  8 0.94771 1.23441</span></span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [18,]  5.0411  9  8 1.42489 1.34067</span></span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [19,]  5.0862  9  9 1.75860 2.04393</span></span>
+<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [20,]  5.0943  9 10 2.61395 2.50137</span></span>
+<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ... with 980 more rows </span></span>
+<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ------------------------------------------</span></span></code></pre></div>
 <p>Frome the result, we get a vector of realized <code>inter_arrival</code> and <code>type</code>. Bivariate model requires <code>inter_arrival</code> and <code>type</code> for estimation.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">inter_arrival2 &lt;-<span class="st"> </span>res2<span class="op">$</span>inter_arrival
-type2 &lt;-<span class="st"> </span>res2<span class="op">$</span>type</code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>inter_arrival2 <span class="ot">&lt;-</span> res2<span class="sc">$</span>inter_arrival</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>type2 <span class="ot">&lt;-</span> res2<span class="sc">$</span>type</span></code></pre></div>
 <p>Log-likelihood is computed by a function <code>logLik</code>.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">logLik</span>(hspec2, <span class="dt">inter_arrival =</span> inter_arrival2, <span class="dt">type =</span> type2)
-<span class="co">#&gt; Warning in .local(object, ...): The initial values for intensity processes are not provided. Internally determined initial values are used.</span>
-<span class="co">#&gt; [1] -1063.402</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">logLik</span>(hspec2, <span class="at">inter_arrival =</span> inter_arrival2, <span class="at">type =</span> type2)</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in .local(object, ...): The initial values for intensity processes are not provided. Internally determined initial values are used.</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] -1044.734</span></span></code></pre></div>
 <p>A log-likelihood estimation is performed using <code>hfit</code>. In the following, the values of parameter slots in <code>mhspec0</code>, such as <code>mu, alpha, beta</code>, are regarded as a starting point of the numerical optimization. For simplicity, we use <code>hspec0 &lt;- hspec2</code>. Since the true parameter values are not known in the actual problem, the initial value should be guessed. The realized <code>inter_arrival</code> and <code>type</code> are used.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">hspec0 &lt;-<span class="st"> </span>hspec2
-mle &lt;-<span class="st"> </span><span class="kw">hfit</span>(hspec0, <span class="dt">inter_arrival =</span> inter_arrival2, <span class="dt">type =</span> type2)
-<span class="co">#&gt;      mu1 alpha1,1 alpha1,2  beta1,1 </span>
-<span class="co">#&gt;     0.20     0.50     0.90     2.25</span>
-<span class="kw">summary</span>(mle)
-<span class="co">#&gt; --------------------------------------------</span>
-<span class="co">#&gt; Maximum Likelihood estimation</span>
-<span class="co">#&gt; BFGS maximization, 31 iterations</span>
-<span class="co">#&gt; Return code 0: successful convergence </span>
-<span class="co">#&gt; Log-Likelihood: -1061.707 </span>
-<span class="co">#&gt; 4  free parameters</span>
-<span class="co">#&gt; Estimates:</span>
-<span class="co">#&gt;          Estimate Std. error t value  Pr(&gt; t)    </span>
-<span class="co">#&gt; mu1       0.20316    0.01580  12.854  &lt; 2e-16 ***</span>
-<span class="co">#&gt; alpha1,1  0.59956    0.08137   7.369 1.72e-13 ***</span>
-<span class="co">#&gt; alpha1,2  0.89903    0.09506   9.457  &lt; 2e-16 ***</span>
-<span class="co">#&gt; beta1,1   2.26760    0.20169  11.243  &lt; 2e-16 ***</span>
-<span class="co">#&gt; ---</span>
-<span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span>
-<span class="co">#&gt; --------------------------------------------</span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>hspec0 <span class="ot">&lt;-</span> hspec2</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>mle <span class="ot">&lt;-</span> <span class="fu">hfit</span>(hspec0, <span class="at">inter_arrival =</span> inter_arrival2, <span class="at">type =</span> type2)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(mle)</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; --------------------------------------------</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Maximum Likelihood estimation</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; BFGS maximization, 36 iterations</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Return code 0: successful convergence </span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Log-Likelihood: -1041.741 </span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 4  free parameters</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Estimates:</span></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;          Estimate Std. error t value  Pr(&gt; t)    </span></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; mu1       0.18119    0.01502  12.064  &lt; 2e-16 ***</span></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; alpha1.1  0.48349    0.07535   6.417 1.39e-10 ***</span></span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; alpha1.2  0.97070    0.09770   9.935  &lt; 2e-16 ***</span></span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; beta1.1   2.09494    0.18481  11.336  &lt; 2e-16 ***</span></span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ---</span></span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</span></span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; --------------------------------------------</span></span></code></pre></div>
 </div>
 <div id="parameter-setting" class="section level3">
 <h3>Parameter setting</h3>
 <p>This subsection explains about the relation between parameter setting and estimation procedure in two-dimensional Hawkes model. The number of parameters to be estimated in the model depends on how we set the parameter slots such as <code>alpha</code> and <code>beta</code> in <code>mhspec0</code>, the sepcification for initial values.. Since the paremeter slot such as <code>alpha</code> is a matrix, and the element in the matrix can be the same or different. The number of parameters in the estimation varies depending on whether or not some of the elements in the initial setting are the same or different.</p>
 <p>For example, if <code>alpha[1,1]</code> and <code>alpha[1,2]</code> in <code>mhspec0</code> are different, the numerical procedure tries to estimate both parameters of <code>alpha[1,1]</code> and <code>alpha[1,2]</code>. If <code>alpha[1,1]</code> and <code>alpha[1,2]</code> are the same in the initial setting, then the estimation procedure considered two parameters are the same in the model and hence only one of them is estimated.</p>
 <p>Recall that th example in the previous section is of a symmetric Hawkes model where <code>alpha</code> is symmetric.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">print</span>(hspec2)
-<span class="co">#&gt; An object of class &quot;hspec&quot;</span>
-<span class="co">#&gt; Slot &quot;mu&quot;:</span>
-<span class="co">#&gt;      [,1]</span>
-<span class="co">#&gt; [1,]  0.2</span>
-<span class="co">#&gt; [2,]  0.2</span>
-<span class="co">#&gt; </span>
-<span class="co">#&gt; Slot &quot;alpha&quot;:</span>
-<span class="co">#&gt;      [,1] [,2]</span>
-<span class="co">#&gt; [1,]  0.5  0.9</span>
-<span class="co">#&gt; [2,]  0.9  0.5</span>
-<span class="co">#&gt; </span>
-<span class="co">#&gt; Slot &quot;beta&quot;:</span>
-<span class="co">#&gt;      [,1] [,2]</span>
-<span class="co">#&gt; [1,] 2.25 2.25</span>
-<span class="co">#&gt; [2,] 2.25 2.25</span>
-<span class="co">#&gt; </span>
-<span class="co">#&gt; Slot &quot;dimens&quot;:</span>
-<span class="co">#&gt; [1] 2</span>
-<span class="co">#&gt; </span>
-<span class="co">#&gt; Slot &quot;rmark&quot;:</span>
-<span class="co">#&gt; function (...) </span>
-<span class="co">#&gt; 1</span>
-<span class="co">#&gt; &lt;bytecode: 0x000000001d5ad458&gt;</span>
-<span class="co">#&gt; &lt;environment: 0x000000001cc98b30&gt;</span>
-<span class="co">#&gt; </span>
-<span class="co">#&gt; Slot &quot;impact&quot;:</span>
-<span class="co">#&gt; NULL</span></code></pre></div>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">res2 &lt;-<span class="st"> </span><span class="kw">hsim</span>(hspec2,  <span class="dt">size=</span><span class="dv">1000</span>)</code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(hspec2)</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; An object of class &quot;hspec&quot;</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Slot &quot;mu&quot;:</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;      [,1]</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1,]  0.2</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [2,]  0.2</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Slot &quot;alpha&quot;:</span></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;      [,1] [,2]</span></span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1,]  0.5  0.9</span></span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [2,]  0.9  0.5</span></span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Slot &quot;beta&quot;:</span></span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;      [,1] [,2]</span></span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1,] 2.25 2.25</span></span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [2,] 2.25 2.25</span></span>
+<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Slot &quot;dimens&quot;:</span></span>
+<span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 2</span></span>
+<span id="cb11-20"><a href="#cb11-20" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb11-21"><a href="#cb11-21" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Slot &quot;rmark&quot;:</span></span>
+<span id="cb11-22"><a href="#cb11-22" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; function (...) </span></span>
+<span id="cb11-23"><a href="#cb11-23" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1</span></span>
+<span id="cb11-24"><a href="#cb11-24" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; &lt;bytecode: 0x000000001d5681f8&gt;</span></span>
+<span id="cb11-25"><a href="#cb11-25" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; &lt;environment: 0x0000000016347bb0&gt;</span></span>
+<span id="cb11-26"><a href="#cb11-26" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb11-27"><a href="#cb11-27" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Slot &quot;dmark&quot;:</span></span>
+<span id="cb11-28"><a href="#cb11-28" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; NULL</span></span>
+<span id="cb11-29"><a href="#cb11-29" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb11-30"><a href="#cb11-30" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Slot &quot;impact&quot;:</span></span>
+<span id="cb11-31"><a href="#cb11-31" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; NULL</span></span>
+<span id="cb11-32"><a href="#cb11-32" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb11-33"><a href="#cb11-33" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Slot &quot;type_col_map&quot;:</span></span>
+<span id="cb11-34"><a href="#cb11-34" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; NULL</span></span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>res2 <span class="ot">&lt;-</span> <span class="fu">hsim</span>(hspec2,  <span class="at">size=</span><span class="dv">1000</span>)</span></code></pre></div>
 <p>In the first example of estimation, <code>alpha0</code> is a matrix where the all elements have the same value, 0.75. In this setting, <code>mhfit</code> considers that <code>alpha11 == alpha12 == alpha21 == alpha22</code> in the model (even though the actual parameters have different values). Similarly for other parmater matrix <code>mu0</code> and <code>beta0</code>.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">mu0 &lt;-<span class="st"> </span><span class="kw">matrix</span>(<span class="kw">c</span>(<span class="fl">0.15</span>, <span class="fl">0.15</span>), <span class="dt">nrow =</span> <span class="dv">2</span>)
-alpha0 &lt;-<span class="st"> </span><span class="kw">matrix</span>(<span class="kw">c</span>(<span class="fl">0.75</span>, <span class="fl">0.75</span>, <span class="fl">0.75</span>, <span class="fl">0.75</span>), <span class="dt">nrow =</span> <span class="dv">2</span>, <span class="dt">byrow=</span><span class="ot">TRUE</span>)
-beta0 &lt;-<span class="st"> </span><span class="kw">matrix</span>(<span class="kw">c</span>(<span class="fl">2.6</span>, <span class="fl">2.6</span>, <span class="fl">2.6</span>, <span class="fl">2.6</span>), <span class="dt">nrow =</span> <span class="dv">2</span>, <span class="dt">byrow=</span><span class="ot">TRUE</span>)
-
-hspec0 &lt;-<span class="st"> </span><span class="kw">new</span>(<span class="st">&quot;hspec&quot;</span>, <span class="dt">mu=</span>mu0, <span class="dt">alpha=</span>alpha0, <span class="dt">beta=</span>beta0)
-<span class="kw">summary</span>(<span class="kw">hfit</span>(hspec0, <span class="dt">inter_arrival =</span> res2<span class="op">$</span>inter_arrival, <span class="dt">type =</span> res2<span class="op">$</span>type))
-<span class="co">#&gt;      mu1 alpha1,1  beta1,1 </span>
-<span class="co">#&gt;     0.15     0.75     2.60</span>
-<span class="co">#&gt; --------------------------------------------</span>
-<span class="co">#&gt; Maximum Likelihood estimation</span>
-<span class="co">#&gt; BFGS maximization, 28 iterations</span>
-<span class="co">#&gt; Return code 0: successful convergence </span>
-<span class="co">#&gt; Log-Likelihood: -1324.235 </span>
-<span class="co">#&gt; 3  free parameters</span>
-<span class="co">#&gt; Estimates:</span>
-<span class="co">#&gt;          Estimate Std. error t value Pr(&gt; t)    </span>
-<span class="co">#&gt; mu1       0.18792    0.01335   14.08  &lt;2e-16 ***</span>
-<span class="co">#&gt; alpha1,1  0.72289    0.06156   11.74  &lt;2e-16 ***</span>
-<span class="co">#&gt; beta1,1   2.34526    0.19789   11.85  &lt;2e-16 ***</span>
-<span class="co">#&gt; ---</span>
-<span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span>
-<span class="co">#&gt; --------------------------------------------</span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>mu0 <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="fl">0.15</span>, <span class="fl">0.15</span>), <span class="at">nrow =</span> <span class="dv">2</span>)</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>alpha0 <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="fl">0.75</span>, <span class="fl">0.75</span>, <span class="fl">0.75</span>, <span class="fl">0.75</span>), <span class="at">nrow =</span> <span class="dv">2</span>, <span class="at">byrow=</span><span class="cn">TRUE</span>)</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>beta0 <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="fl">2.6</span>, <span class="fl">2.6</span>, <span class="fl">2.6</span>, <span class="fl">2.6</span>), <span class="at">nrow =</span> <span class="dv">2</span>, <span class="at">byrow=</span><span class="cn">TRUE</span>)</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>hspec0 <span class="ot">&lt;-</span> <span class="fu">new</span>(<span class="st">&quot;hspec&quot;</span>, <span class="at">mu=</span>mu0, <span class="at">alpha=</span>alpha0, <span class="at">beta=</span>beta0)</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(<span class="fu">hfit</span>(hspec0, <span class="at">inter_arrival =</span> res2<span class="sc">$</span>inter_arrival, <span class="at">type =</span> res2<span class="sc">$</span>type))</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; --------------------------------------------</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Maximum Likelihood estimation</span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; BFGS maximization, 35 iterations</span></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Return code 0: successful convergence </span></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Log-Likelihood: -1282.818 </span></span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3  free parameters</span></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Estimates:</span></span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;          Estimate Std. error t value Pr(&gt; t)    </span></span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; mu1       0.19667    0.01535   12.82  &lt;2e-16 ***</span></span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; alpha1.1  0.62901    0.05876   10.70  &lt;2e-16 ***</span></span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; beta1.1   1.98320    0.19228   10.31  &lt;2e-16 ***</span></span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ---</span></span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</span></span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; --------------------------------------------</span></span></code></pre></div>
 <p>In the second example, <code>alpha0</code>’s elements are not same, but symmetric as in the original simulation. We have <code>alpha11 == alpha22</code> and <code>alpha11 == alpha22</code> in <code>alpha0</code> and hence <code>alpha11</code> and <code>alpha12</code> will be estimated.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">mu0 &lt;-<span class="st"> </span><span class="kw">matrix</span>(<span class="kw">c</span>(<span class="fl">0.15</span>, <span class="fl">0.15</span>), <span class="dt">nrow =</span> <span class="dv">2</span>)
-alpha0 &lt;-<span class="st"> </span><span class="kw">matrix</span>(<span class="kw">c</span>(<span class="fl">0.75</span>, <span class="fl">0.751</span>, <span class="fl">0.751</span>, <span class="fl">0.75</span>), <span class="dt">nrow =</span> <span class="dv">2</span>, <span class="dt">byrow=</span><span class="ot">TRUE</span>)
-beta0 &lt;-<span class="st"> </span><span class="kw">matrix</span>(<span class="kw">c</span>(<span class="fl">2.6</span>, <span class="fl">2.6</span>, <span class="fl">2.6</span>, <span class="fl">2.6</span>), <span class="dt">nrow =</span> <span class="dv">2</span>, <span class="dt">byrow=</span><span class="ot">TRUE</span>)
-
-hspec0 &lt;-<span class="st"> </span><span class="kw">new</span>(<span class="st">&quot;hspec&quot;</span>, <span class="dt">mu=</span>mu0, <span class="dt">alpha=</span>alpha0, <span class="dt">beta=</span>beta0)
-<span class="kw">summary</span>(<span class="kw">hfit</span>(hspec0, <span class="dt">inter_arrival =</span> res2<span class="op">$</span>inter_arrival, <span class="dt">type =</span> res2<span class="op">$</span>type))
-<span class="co">#&gt;      mu1 alpha1,1 alpha1,2  beta1,1 </span>
-<span class="co">#&gt;    0.150    0.750    0.751    2.600</span>
-<span class="co">#&gt; --------------------------------------------</span>
-<span class="co">#&gt; Maximum Likelihood estimation</span>
-<span class="co">#&gt; BFGS maximization, 32 iterations</span>
-<span class="co">#&gt; Return code 0: successful convergence </span>
-<span class="co">#&gt; Log-Likelihood: -1314.076 </span>
-<span class="co">#&gt; 4  free parameters</span>
-<span class="co">#&gt; Estimates:</span>
-<span class="co">#&gt;          Estimate Std. error t value  Pr(&gt; t)    </span>
-<span class="co">#&gt; mu1       0.18883    0.01327  14.233  &lt; 2e-16 ***</span>
-<span class="co">#&gt; alpha1,1  0.48009    0.06788   7.073 1.52e-12 ***</span>
-<span class="co">#&gt; alpha1,2  0.96746    0.09065  10.673  &lt; 2e-16 ***</span>
-<span class="co">#&gt; beta1,1   2.35526    0.18428  12.781  &lt; 2e-16 ***</span>
-<span class="co">#&gt; ---</span>
-<span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span>
-<span class="co">#&gt; --------------------------------------------</span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>mu0 <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="fl">0.15</span>, <span class="fl">0.15</span>), <span class="at">nrow =</span> <span class="dv">2</span>)</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>alpha0 <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="fl">0.75</span>, <span class="fl">0.751</span>, <span class="fl">0.751</span>, <span class="fl">0.75</span>), <span class="at">nrow =</span> <span class="dv">2</span>, <span class="at">byrow=</span><span class="cn">TRUE</span>)</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>beta0 <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="fl">2.6</span>, <span class="fl">2.6</span>, <span class="fl">2.6</span>, <span class="fl">2.6</span>), <span class="at">nrow =</span> <span class="dv">2</span>, <span class="at">byrow=</span><span class="cn">TRUE</span>)</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>hspec0 <span class="ot">&lt;-</span> <span class="fu">new</span>(<span class="st">&quot;hspec&quot;</span>, <span class="at">mu=</span>mu0, <span class="at">alpha=</span>alpha0, <span class="at">beta=</span>beta0)</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(<span class="fu">hfit</span>(hspec0, <span class="at">inter_arrival =</span> res2<span class="sc">$</span>inter_arrival, <span class="at">type =</span> res2<span class="sc">$</span>type))</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; --------------------------------------------</span></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Maximum Likelihood estimation</span></span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; BFGS maximization, 31 iterations</span></span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Return code 0: successful convergence </span></span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Log-Likelihood: -1279.78 </span></span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 4  free parameters</span></span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Estimates:</span></span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;          Estimate Std. error t value  Pr(&gt; t)    </span></span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; mu1       0.19704    0.01525   12.92  &lt; 2e-16 ***</span></span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; alpha1.1  0.51569    0.06654    7.75 9.16e-15 ***</span></span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; alpha1.2  0.75801    0.08366    9.06  &lt; 2e-16 ***</span></span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; beta1.1   2.00977    0.18420   10.91  &lt; 2e-16 ***</span></span>
+<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ---</span></span>
+<span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</span></span>
+<span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; --------------------------------------------</span></span></code></pre></div>
 <p>By simply setting <code>reduced = FALSE</code>, all parameters are estimated (not recommended).</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">summary</span>(<span class="kw">hfit</span>(hspec2, <span class="dt">inter_arrival =</span> res2<span class="op">$</span>inter_arrival, <span class="dt">type =</span> res2<span class="op">$</span>type, <span class="dt">reduced=</span><span class="ot">FALSE</span>))
-<span class="co">#&gt;      mu1      mu2 alpha1,1 alpha2,1 alpha1,2 alpha2,2  beta1,1  beta2,1 </span>
-<span class="co">#&gt;     0.20     0.20     0.50     0.90     0.90     0.50     2.25     2.25 </span>
-<span class="co">#&gt;  beta1,2  beta2,2 </span>
-<span class="co">#&gt;     2.25     2.25</span>
-<span class="co">#&gt; --------------------------------------------</span>
-<span class="co">#&gt; Maximum Likelihood estimation</span>
-<span class="co">#&gt; BFGS maximization, 56 iterations</span>
-<span class="co">#&gt; Return code 0: successful convergence </span>
-<span class="co">#&gt; Log-Likelihood: -1311.888 </span>
-<span class="co">#&gt; 10  free parameters</span>
-<span class="co">#&gt; Estimates:</span>
-<span class="co">#&gt;          Estimate Std. error t value  Pr(&gt; t)    </span>
-<span class="co">#&gt; mu1       0.18813    0.01915   9.826  &lt; 2e-16 ***</span>
-<span class="co">#&gt; mu2       0.18929    0.01828  10.354  &lt; 2e-16 ***</span>
-<span class="co">#&gt; alpha1,1  0.33976    0.08497   3.999 6.37e-05 ***</span>
-<span class="co">#&gt; alpha2,1  0.96210    0.14672   6.557 5.48e-11 ***</span>
-<span class="co">#&gt; alpha1,2  1.04192    0.14743   7.067 1.58e-12 ***</span>
-<span class="co">#&gt; alpha2,2  0.61487    0.12641   4.864 1.15e-06 ***</span>
-<span class="co">#&gt; beta1,1   1.67851    0.40245   4.171 3.04e-05 ***</span>
-<span class="co">#&gt; beta2,1   2.56714    0.42657   6.018 1.76e-09 ***</span>
-<span class="co">#&gt; beta1,2   2.42639    0.37305   6.504 7.81e-11 ***</span>
-<span class="co">#&gt; beta2,2   2.74344    0.60919   4.503 6.69e-06 ***</span>
-<span class="co">#&gt; ---</span>
-<span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span>
-<span class="co">#&gt; --------------------------------------------</span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(<span class="fu">hfit</span>(hspec2, <span class="at">inter_arrival =</span> res2<span class="sc">$</span>inter_arrival, <span class="at">type =</span> res2<span class="sc">$</span>type, <span class="at">reduced=</span><span class="cn">FALSE</span>))</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; --------------------------------------------</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Maximum Likelihood estimation</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; BFGS maximization, 51 iterations</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Return code 0: successful convergence </span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Log-Likelihood: -1277.887 </span></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 10  free parameters</span></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Estimates:</span></span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;          Estimate Std. error t value  Pr(&gt; t)    </span></span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; mu1       0.21174    0.01369  15.468  &lt; 2e-16 ***</span></span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; mu2       0.18064    0.02017   8.954  &lt; 2e-16 ***</span></span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; alpha1.1  0.46858         NA      NA       NA    </span></span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; alpha2.1  0.86952    0.13948   6.234 4.54e-10 ***</span></span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; alpha1.2  0.74933    0.16026   4.676 2.93e-06 ***</span></span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; alpha2.2  0.48571         NA      NA       NA    </span></span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; beta1.1   1.72933         NA      NA       NA    </span></span>
+<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; beta2.1   2.11391    0.33986   6.220 4.98e-10 ***</span></span>
+<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; beta1.2   2.37364    0.68219   3.479 0.000502 ***</span></span>
+<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; beta2.2   1.76635         NA      NA       NA    </span></span>
+<span id="cb15-20"><a href="#cb15-20" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ---</span></span>
+<span id="cb15-21"><a href="#cb15-21" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</span></span>
+<span id="cb15-22"><a href="#cb15-22" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; --------------------------------------------</span></span></code></pre></div>
 </div>
 <div id="more-complicated-model" class="section level3">
 <h3>More complicated model</h3>
 <div id="linear-impact-model" class="section level4">
 <h4>Linear impact model</h4>
 <p>In the following, <code>impact</code> represents the impact of mark. It is a function, and the first argument is <code>param</code> represents the parameter of the model. <code>impact</code> function can have additional arguments such as <code>alpha</code>, <code>n</code>, <code>mark</code>, etc., which represents the dependence. Do not miss <code>...</code> as the ellipsis is omitted, an error occurs.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">mu &lt;-<span class="st"> </span><span class="kw">matrix</span>(<span class="kw">c</span>(<span class="fl">0.15</span>, <span class="fl">0.15</span>), <span class="dt">nrow=</span><span class="dv">2</span>)
-alpha &lt;-<span class="st"> </span><span class="kw">matrix</span>(<span class="kw">c</span>(<span class="fl">0.75</span>, <span class="fl">0.6</span>, <span class="fl">0.6</span>, <span class="fl">0.75</span>), <span class="dt">nrow=</span><span class="dv">2</span>, <span class="dt">byrow=</span>T)
-beta &lt;-<span class="st"> </span><span class="kw">matrix</span>(<span class="kw">c</span>(<span class="fl">2.6</span>, <span class="fl">2.6</span>, <span class="fl">2.6</span>, <span class="fl">2.6</span>), <span class="dt">nrow=</span><span class="dv">2</span>)
-rmark &lt;-<span class="st"> </span><span class="cf">function</span>(<span class="dt">param =</span> <span class="kw">c</span>(<span class="dt">p=</span><span class="fl">0.65</span>), ...){
-  <span class="kw">rgeom</span>(<span class="dv">1</span>, <span class="dt">p=</span>param[<span class="dv">1</span>]) <span class="op">+</span><span class="st"> </span><span class="dv">1</span>
-}
-
-impact &lt;-<span class="st"> </span><span class="cf">function</span>(<span class="dt">param =</span> <span class="kw">c</span>(<span class="dt">eta1=</span><span class="fl">0.2</span>), alpha, n, mark, ...){
-  ma &lt;-<span class="st"> </span><span class="kw">matrix</span>(<span class="kw">rep</span>(mark[n]<span class="op">-</span><span class="dv">1</span>, <span class="dv">4</span>), <span class="dt">nrow =</span> <span class="dv">2</span>)
-  alpha <span class="op">*</span><span class="st"> </span>ma <span class="op">*</span><span class="st"> </span><span class="kw">matrix</span>( <span class="kw">rep</span>(param[<span class="st">&quot;eta1&quot;</span>], <span class="dv">4</span>), <span class="dt">nrow=</span><span class="dv">2</span>)
-  <span class="co">#alpha * ma * matrix( c(rep(param[&quot;eta1&quot;], 2), rep(param[&quot;eta2&quot;], 2)), nrow=2)</span>
-}
-h1 &lt;-<span class="st"> </span><span class="kw">new</span>(<span class="st">&quot;hspec&quot;</span>, <span class="dt">mu=</span>mu, <span class="dt">alpha=</span>alpha, <span class="dt">beta=</span>beta,
-          <span class="dt">rmark =</span> rmark,
-          <span class="dt">impact=</span>impact)
-res &lt;-<span class="st"> </span><span class="kw">hsim</span>(h1, <span class="dt">size=</span><span class="dv">1000</span>, <span class="dt">lambda0 =</span> <span class="kw">matrix</span>(<span class="kw">rep</span>(<span class="fl">0.1</span>,<span class="dv">4</span>), <span class="dt">nrow=</span><span class="dv">2</span>))
-
-fit &lt;-<span class="st"> </span><span class="kw">hfit</span>(h1, 
-            <span class="dt">inter_arrival =</span> res<span class="op">$</span>inter_arrival,
-            <span class="dt">type =</span> res<span class="op">$</span>type,
-            <span class="dt">mark =</span> res<span class="op">$</span>mark,
-            <span class="dt">lambda0 =</span> <span class="kw">matrix</span>(<span class="kw">rep</span>(<span class="fl">0.1</span>,<span class="dv">4</span>), <span class="dt">nrow=</span><span class="dv">2</span>))
-<span class="co">#&gt;      mu1 alpha1,1 alpha1,2  beta1,1     eta1 </span>
-<span class="co">#&gt;     0.15     0.75     0.60     2.60     0.20</span>
-
-<span class="kw">summary</span>(fit)
-<span class="co">#&gt; --------------------------------------------</span>
-<span class="co">#&gt; Maximum Likelihood estimation</span>
-<span class="co">#&gt; BFGS maximization, 46 iterations</span>
-<span class="co">#&gt; Return code 0: successful convergence </span>
-<span class="co">#&gt; Log-Likelihood: -1526.811 </span>
-<span class="co">#&gt; 5  free parameters</span>
-<span class="co">#&gt; Estimates:</span>
-<span class="co">#&gt;          Estimate Std. error t value  Pr(&gt; t)    </span>
-<span class="co">#&gt; mu1       0.15046    0.00928  16.213  &lt; 2e-16 ***</span>
-<span class="co">#&gt; alpha1,1  0.80019    0.10186   7.856 3.96e-15 ***</span>
-<span class="co">#&gt; alpha1,2  0.68370    0.08870   7.708 1.28e-14 ***</span>
-<span class="co">#&gt; beta1,1   2.76112    0.25024  11.034  &lt; 2e-16 ***</span>
-<span class="co">#&gt; eta1      0.17281    0.10292   1.679   0.0931 .  </span>
-<span class="co">#&gt; ---</span>
-<span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span>
-<span class="co">#&gt; --------------------------------------------</span></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>mu <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="fl">0.15</span>, <span class="fl">0.15</span>), <span class="at">nrow=</span><span class="dv">2</span>)</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>alpha <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="fl">0.75</span>, <span class="fl">0.6</span>, <span class="fl">0.6</span>, <span class="fl">0.75</span>), <span class="at">nrow=</span><span class="dv">2</span>, <span class="at">byrow=</span>T)</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>beta <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="fl">2.6</span>, <span class="fl">2.6</span>, <span class="fl">2.6</span>, <span class="fl">2.6</span>), <span class="at">nrow=</span><span class="dv">2</span>)</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>rmark <span class="ot">&lt;-</span> <span class="cf">function</span>(<span class="at">param =</span> <span class="fu">c</span>(<span class="at">p=</span><span class="fl">0.65</span>), ...){</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rgeom</span>(<span class="dv">1</span>, <span class="at">p=</span>param[<span class="dv">1</span>]) <span class="sc">+</span> <span class="dv">1</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>impact <span class="ot">&lt;-</span> <span class="cf">function</span>(<span class="at">param =</span> <span class="fu">c</span>(<span class="at">eta1=</span><span class="fl">0.2</span>), alpha, n, mark, ...){</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>  ma <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">rep</span>(mark[n]<span class="sc">-</span><span class="dv">1</span>, <span class="dv">4</span>), <span class="at">nrow =</span> <span class="dv">2</span>)</span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>  alpha <span class="sc">*</span> ma <span class="sc">*</span> <span class="fu">matrix</span>( <span class="fu">rep</span>(param[<span class="st">&quot;eta1&quot;</span>], <span class="dv">4</span>), <span class="at">nrow=</span><span class="dv">2</span>)</span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>  <span class="co">#alpha * ma * matrix( c(rep(param[&quot;eta1&quot;], 2), rep(param[&quot;eta2&quot;], 2)), nrow=2)</span></span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>h1 <span class="ot">&lt;-</span> <span class="fu">new</span>(<span class="st">&quot;hspec&quot;</span>, <span class="at">mu=</span>mu, <span class="at">alpha=</span>alpha, <span class="at">beta=</span>beta,</span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a>          <span class="at">rmark =</span> rmark,</span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a>          <span class="at">impact=</span>impact)</span>
+<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a>res <span class="ot">&lt;-</span> <span class="fu">hsim</span>(h1, <span class="at">size=</span><span class="dv">1000</span>, <span class="at">lambda0 =</span> <span class="fu">matrix</span>(<span class="fu">rep</span>(<span class="fl">0.1</span>,<span class="dv">4</span>), <span class="at">nrow=</span><span class="dv">2</span>))</span>
+<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a>fit <span class="ot">&lt;-</span> <span class="fu">hfit</span>(h1, </span>
+<span id="cb16-19"><a href="#cb16-19" aria-hidden="true" tabindex="-1"></a>            <span class="at">inter_arrival =</span> res<span class="sc">$</span>inter_arrival,</span>
+<span id="cb16-20"><a href="#cb16-20" aria-hidden="true" tabindex="-1"></a>            <span class="at">type =</span> res<span class="sc">$</span>type,</span>
+<span id="cb16-21"><a href="#cb16-21" aria-hidden="true" tabindex="-1"></a>            <span class="at">mark =</span> res<span class="sc">$</span>mark,</span>
+<span id="cb16-22"><a href="#cb16-22" aria-hidden="true" tabindex="-1"></a>            <span class="at">lambda0 =</span> <span class="fu">matrix</span>(<span class="fu">rep</span>(<span class="fl">0.1</span>,<span class="dv">4</span>), <span class="at">nrow=</span><span class="dv">2</span>))</span>
+<span id="cb16-23"><a href="#cb16-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-24"><a href="#cb16-24" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(fit)</span>
+<span id="cb16-25"><a href="#cb16-25" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; --------------------------------------------</span></span>
+<span id="cb16-26"><a href="#cb16-26" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Maximum Likelihood estimation</span></span>
+<span id="cb16-27"><a href="#cb16-27" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; BFGS maximization, 38 iterations</span></span>
+<span id="cb16-28"><a href="#cb16-28" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Return code 0: successful convergence </span></span>
+<span id="cb16-29"><a href="#cb16-29" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Log-Likelihood: -1773.869 </span></span>
+<span id="cb16-30"><a href="#cb16-30" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 5  free parameters</span></span>
+<span id="cb16-31"><a href="#cb16-31" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Estimates:</span></span>
+<span id="cb16-32"><a href="#cb16-32" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;          Estimate Std. error t value  Pr(&gt; t)    </span></span>
+<span id="cb16-33"><a href="#cb16-33" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; mu1      0.145327   0.008906  16.317  &lt; 2e-16 ***</span></span>
+<span id="cb16-34"><a href="#cb16-34" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; alpha1.1 0.677646   0.090884   7.456 8.91e-14 ***</span></span>
+<span id="cb16-35"><a href="#cb16-35" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; alpha1.2 0.539642   0.076877   7.020 2.23e-12 ***</span></span>
+<span id="cb16-36"><a href="#cb16-36" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; beta1.1  2.432946   0.280576   8.671  &lt; 2e-16 ***</span></span>
+<span id="cb16-37"><a href="#cb16-37" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; eta1     0.131363   0.091662   1.433    0.152    </span></span>
+<span id="cb16-38"><a href="#cb16-38" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ---</span></span>
+<span id="cb16-39"><a href="#cb16-39" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</span></span>
+<span id="cb16-40"><a href="#cb16-40" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; --------------------------------------------</span></span></code></pre></div>
 </div>
 <div id="hawkes-flocking-model" class="section level4">
 <h4>Hawkes flocking model</h4>
 <p>In the basic model, <code>alpha</code> is a matrix, but it can be a function as in the following code. The function <code>alpha</code> simply return a <span class="math inline">\(4\times4\)</span> matrix but by doing so, we can fix some of elements as specific vales when estimating. When estimating, the optimization only works for the specified parameters in <code>param</code>. In the case of simulation, there is no difference whether the parameter set is represented by a matrix or a function.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">mu &lt;-<span class="st"> </span><span class="kw">matrix</span>(<span class="kw">c</span>(<span class="fl">0.02</span>, <span class="fl">0.02</span>, <span class="fl">0.04</span>, <span class="fl">0.04</span>), <span class="dt">nrow =</span> <span class="dv">4</span>)
-
-
-alpha &lt;-<span class="st"> </span><span class="cf">function</span>(<span class="dt">param =</span> <span class="kw">c</span>(<span class="dt">alpha11 =</span> <span class="dv">0</span>, <span class="dt">alpha12 =</span> <span class="fl">0.3</span>, <span class="dt">alpha33 =</span> <span class="fl">0.3</span>, <span class="dt">alpha34 =</span> <span class="fl">0.4</span>)){
-  <span class="kw">matrix</span>(<span class="kw">c</span>(param[<span class="st">&quot;alpha11&quot;</span>], param[<span class="st">&quot;alpha12&quot;</span>], <span class="dv">0</span>, <span class="dv">0</span>,
-           param[<span class="st">&quot;alpha12&quot;</span>], param[<span class="st">&quot;alpha11&quot;</span>], <span class="dv">0</span>, <span class="dv">0</span>,
-           <span class="dv">0</span>, <span class="dv">0</span>, param[<span class="st">&quot;alpha33&quot;</span>], param[<span class="st">&quot;alpha34&quot;</span>],
-           <span class="dv">0</span>, <span class="dv">0</span>, param[<span class="st">&quot;alpha34&quot;</span>], param[<span class="st">&quot;alpha33&quot;</span>]), <span class="dt">nrow =</span> <span class="dv">4</span>, <span class="dt">byrow =</span> T)
-}
-
-
-beta &lt;-<span class="st"> </span><span class="kw">matrix</span>(<span class="kw">c</span>(<span class="kw">rep</span>(<span class="fl">0.7</span>, <span class="dv">8</span>), <span class="kw">rep</span>(<span class="fl">1.1</span>, <span class="dv">8</span>)), <span class="dt">nrow =</span> <span class="dv">4</span>, <span class="dt">byrow =</span> T)
-
-impact &lt;-<span class="st"> </span><span class="cf">function</span>(<span class="dt">param =</span> <span class="kw">c</span>(<span class="dt">alpha1n=</span><span class="dv">0</span>, <span class="dt">alpha1w=</span><span class="fl">0.1</span>, <span class="dt">alpha2n=</span><span class="fl">0.1</span>, <span class="dt">alpha2w=</span><span class="fl">0.2</span>),
-                   <span class="dt">n=</span>n, <span class="dt">N=</span>N, ...){
-  
-  Psi &lt;-<span class="st"> </span><span class="kw">matrix</span>(<span class="kw">c</span>(<span class="dv">0</span>, <span class="dv">0</span>, param[<span class="st">'alpha1w'</span>], param[<span class="st">'alpha1n'</span>],
-                  <span class="dv">0</span>, <span class="dv">0</span>, param[<span class="st">'alpha1n'</span>], param[<span class="st">'alpha1w'</span>],
-                  param[<span class="st">'alpha2w'</span>], param[<span class="st">'alpha2n'</span>], <span class="dv">0</span>, <span class="dv">0</span>,
-                  param[<span class="st">'alpha2n'</span>], param[<span class="st">'alpha2w'</span>], <span class="dv">0</span>, <span class="dv">0</span>), <span class="dt">nrow=</span><span class="dv">4</span>, <span class="dt">byrow=</span>T)
-  
-  ind &lt;-<span class="st"> </span>N[,<span class="st">&quot;N1&quot;</span>][n] <span class="op">-</span><span class="st"> </span>N[,<span class="st">&quot;N2&quot;</span>][n] <span class="op">&gt;</span><span class="st"> </span>N[,<span class="st">&quot;N3&quot;</span>][n] <span class="op">-</span><span class="st"> </span>N[,<span class="st">&quot;N4&quot;</span>][n] <span class="op">+</span><span class="st"> </span><span class="fl">0.5</span>
-  
-  km &lt;-<span class="st"> </span><span class="kw">matrix</span>(<span class="kw">c</span>(<span class="op">!</span>ind, <span class="op">!</span>ind, <span class="op">!</span>ind, <span class="op">!</span>ind,
-                 ind, ind, ind, ind,
-                 ind, ind, ind, ind,
-                 <span class="op">!</span>ind, <span class="op">!</span>ind, <span class="op">!</span>ind, <span class="op">!</span>ind), <span class="dt">nrow =</span> <span class="dv">4</span>, <span class="dt">byrow =</span> T)
-  
-  km <span class="op">*</span><span class="st"> </span>Psi
-}
-
-h &lt;-<span class="st"> </span><span class="kw">new</span>(<span class="st">&quot;hspec&quot;</span>,
-         <span class="dt">mu =</span> mu, <span class="dt">alpha =</span> alpha, <span class="dt">beta =</span> beta, <span class="dt">impact =</span> impact)
-
-hr &lt;-<span class="st"> </span><span class="kw">hsim</span>(h, <span class="dt">size=</span><span class="dv">1000</span>)
-
-
-fit &lt;-<span class="st"> </span><span class="kw">hfit</span>(h, hr<span class="op">$</span>inter_arrival, hr<span class="op">$</span>type)
-<span class="co">#&gt;     mu1     mu3 alpha11 alpha12 alpha33 alpha34 beta1,1 beta3,1 alpha1n </span>
-<span class="co">#&gt;    0.02    0.04    0.00    0.30    0.30    0.40    0.70    1.10    0.00 </span>
-<span class="co">#&gt; alpha1w alpha2n alpha2w </span>
-<span class="co">#&gt;    0.10    0.10    0.20</span>
-<span class="kw">summary</span>(fit)
-<span class="co">#&gt; --------------------------------------------</span>
-<span class="co">#&gt; Maximum Likelihood estimation</span>
-<span class="co">#&gt; BFGS maximization, 91 iterations</span>
-<span class="co">#&gt; Return code 0: successful convergence </span>
-<span class="co">#&gt; Log-Likelihood: -2627.193 </span>
-<span class="co">#&gt; 12  free parameters</span>
-<span class="co">#&gt; Estimates:</span>
-<span class="co">#&gt;          Estimate Std. error t value  Pr(&gt; t)    </span>
-<span class="co">#&gt; mu1      0.022172   0.002502   8.863  &lt; 2e-16 ***</span>
-<span class="co">#&gt; mu3      0.040147   0.003421  11.736  &lt; 2e-16 ***</span>
-<span class="co">#&gt; alpha11 -0.045187   0.013858  -3.261  0.00111 ** </span>
-<span class="co">#&gt; alpha12  0.310024   0.044909   6.903 5.08e-12 ***</span>
-<span class="co">#&gt; alpha33  0.231770   0.038615   6.002 1.95e-09 ***</span>
-<span class="co">#&gt; alpha34  0.480105   0.052190   9.199  &lt; 2e-16 ***</span>
-<span class="co">#&gt; beta1,1  0.689674   0.081276   8.486  &lt; 2e-16 ***</span>
-<span class="co">#&gt; beta3,1  1.154105   0.103202  11.183  &lt; 2e-16 ***</span>
-<span class="co">#&gt; alpha1n -0.006219   0.017935  -0.347  0.72878    </span>
-<span class="co">#&gt; alpha1w  0.110979   0.021764   5.099 3.41e-07 ***</span>
-<span class="co">#&gt; alpha2n  0.230138   0.075533   3.047  0.00231 ** </span>
-<span class="co">#&gt; alpha2w  0.207419   0.060753   3.414  0.00064 ***</span>
-<span class="co">#&gt; ---</span>
-<span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span>
-<span class="co">#&gt; --------------------------------------------</span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>mu <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="fl">0.02</span>, <span class="fl">0.02</span>, <span class="fl">0.04</span>, <span class="fl">0.04</span>), <span class="at">nrow =</span> <span class="dv">4</span>)</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>alpha <span class="ot">&lt;-</span> <span class="cf">function</span>(<span class="at">param =</span> <span class="fu">c</span>(<span class="at">alpha11 =</span> <span class="dv">0</span>, <span class="at">alpha12 =</span> <span class="fl">0.3</span>, <span class="at">alpha33 =</span> <span class="fl">0.3</span>, <span class="at">alpha34 =</span> <span class="fl">0.4</span>)){</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">matrix</span>(<span class="fu">c</span>(param[<span class="st">&quot;alpha11&quot;</span>], param[<span class="st">&quot;alpha12&quot;</span>], <span class="dv">0</span>, <span class="dv">0</span>,</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>           param[<span class="st">&quot;alpha12&quot;</span>], param[<span class="st">&quot;alpha11&quot;</span>], <span class="dv">0</span>, <span class="dv">0</span>,</span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>           <span class="dv">0</span>, <span class="dv">0</span>, param[<span class="st">&quot;alpha33&quot;</span>], param[<span class="st">&quot;alpha34&quot;</span>],</span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>           <span class="dv">0</span>, <span class="dv">0</span>, param[<span class="st">&quot;alpha34&quot;</span>], param[<span class="st">&quot;alpha33&quot;</span>]), <span class="at">nrow =</span> <span class="dv">4</span>, <span class="at">byrow =</span> T)</span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>beta <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="fu">rep</span>(<span class="fl">0.7</span>, <span class="dv">8</span>), <span class="fu">rep</span>(<span class="fl">1.1</span>, <span class="dv">8</span>)), <span class="at">nrow =</span> <span class="dv">4</span>, <span class="at">byrow =</span> T)</span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a>impact <span class="ot">&lt;-</span> <span class="cf">function</span>(<span class="at">param =</span> <span class="fu">c</span>(<span class="at">alpha1n=</span><span class="dv">0</span>, <span class="at">alpha1w=</span><span class="fl">0.1</span>, <span class="at">alpha2n=</span><span class="fl">0.1</span>, <span class="at">alpha2w=</span><span class="fl">0.2</span>),</span>
+<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a>                   <span class="at">n=</span>n, <span class="at">N=</span>N, ...){</span>
+<span id="cb17-16"><a href="#cb17-16" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb17-17"><a href="#cb17-17" aria-hidden="true" tabindex="-1"></a>  Psi <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">0</span>, param[<span class="st">&#39;alpha1w&#39;</span>], param[<span class="st">&#39;alpha1n&#39;</span>],</span>
+<span id="cb17-18"><a href="#cb17-18" aria-hidden="true" tabindex="-1"></a>                  <span class="dv">0</span>, <span class="dv">0</span>, param[<span class="st">&#39;alpha1n&#39;</span>], param[<span class="st">&#39;alpha1w&#39;</span>],</span>
+<span id="cb17-19"><a href="#cb17-19" aria-hidden="true" tabindex="-1"></a>                  param[<span class="st">&#39;alpha2w&#39;</span>], param[<span class="st">&#39;alpha2n&#39;</span>], <span class="dv">0</span>, <span class="dv">0</span>,</span>
+<span id="cb17-20"><a href="#cb17-20" aria-hidden="true" tabindex="-1"></a>                  param[<span class="st">&#39;alpha2n&#39;</span>], param[<span class="st">&#39;alpha2w&#39;</span>], <span class="dv">0</span>, <span class="dv">0</span>), <span class="at">nrow=</span><span class="dv">4</span>, <span class="at">byrow=</span>T)</span>
+<span id="cb17-21"><a href="#cb17-21" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb17-22"><a href="#cb17-22" aria-hidden="true" tabindex="-1"></a>  ind <span class="ot">&lt;-</span> N[,<span class="st">&quot;N1&quot;</span>][n] <span class="sc">-</span> N[,<span class="st">&quot;N2&quot;</span>][n] <span class="sc">&gt;</span> N[,<span class="st">&quot;N3&quot;</span>][n] <span class="sc">-</span> N[,<span class="st">&quot;N4&quot;</span>][n] <span class="sc">+</span> <span class="fl">0.5</span></span>
+<span id="cb17-23"><a href="#cb17-23" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb17-24"><a href="#cb17-24" aria-hidden="true" tabindex="-1"></a>  km <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="sc">!</span>ind, <span class="sc">!</span>ind, <span class="sc">!</span>ind, <span class="sc">!</span>ind,</span>
+<span id="cb17-25"><a href="#cb17-25" aria-hidden="true" tabindex="-1"></a>                 ind, ind, ind, ind,</span>
+<span id="cb17-26"><a href="#cb17-26" aria-hidden="true" tabindex="-1"></a>                 ind, ind, ind, ind,</span>
+<span id="cb17-27"><a href="#cb17-27" aria-hidden="true" tabindex="-1"></a>                 <span class="sc">!</span>ind, <span class="sc">!</span>ind, <span class="sc">!</span>ind, <span class="sc">!</span>ind), <span class="at">nrow =</span> <span class="dv">4</span>, <span class="at">byrow =</span> T)</span>
+<span id="cb17-28"><a href="#cb17-28" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb17-29"><a href="#cb17-29" aria-hidden="true" tabindex="-1"></a>  km <span class="sc">*</span> Psi</span>
+<span id="cb17-30"><a href="#cb17-30" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb17-31"><a href="#cb17-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-32"><a href="#cb17-32" aria-hidden="true" tabindex="-1"></a>h <span class="ot">&lt;-</span> <span class="fu">new</span>(<span class="st">&quot;hspec&quot;</span>,</span>
+<span id="cb17-33"><a href="#cb17-33" aria-hidden="true" tabindex="-1"></a>         <span class="at">mu =</span> mu, <span class="at">alpha =</span> alpha, <span class="at">beta =</span> beta, <span class="at">impact =</span> impact)</span>
+<span id="cb17-34"><a href="#cb17-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-35"><a href="#cb17-35" aria-hidden="true" tabindex="-1"></a>hr <span class="ot">&lt;-</span> <span class="fu">hsim</span>(h, <span class="at">size=</span><span class="dv">1000</span>)</span>
+<span id="cb17-36"><a href="#cb17-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-37"><a href="#cb17-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-38"><a href="#cb17-38" aria-hidden="true" tabindex="-1"></a>fit <span class="ot">&lt;-</span> <span class="fu">hfit</span>(h, hr<span class="sc">$</span>inter_arrival, hr<span class="sc">$</span>type)</span>
+<span id="cb17-39"><a href="#cb17-39" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(fit)</span>
+<span id="cb17-40"><a href="#cb17-40" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; --------------------------------------------</span></span>
+<span id="cb17-41"><a href="#cb17-41" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Maximum Likelihood estimation</span></span>
+<span id="cb17-42"><a href="#cb17-42" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; BFGS maximization, 82 iterations</span></span>
+<span id="cb17-43"><a href="#cb17-43" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Return code 0: successful convergence </span></span>
+<span id="cb17-44"><a href="#cb17-44" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Log-Likelihood: -2456.944 </span></span>
+<span id="cb17-45"><a href="#cb17-45" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 12  free parameters</span></span>
+<span id="cb17-46"><a href="#cb17-46" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Estimates:</span></span>
+<span id="cb17-47"><a href="#cb17-47" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;          Estimate Std. error t value  Pr(&gt; t)    </span></span>
+<span id="cb17-48"><a href="#cb17-48" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; mu1      0.021343   0.002491   8.568  &lt; 2e-16 ***</span></span>
+<span id="cb17-49"><a href="#cb17-49" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; mu3      0.040149   0.003482  11.529  &lt; 2e-16 ***</span></span>
+<span id="cb17-50"><a href="#cb17-50" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; alpha11 -0.032145   0.021615  -1.487   0.1370    </span></span>
+<span id="cb17-51"><a href="#cb17-51" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; alpha12  0.365874   0.055751   6.563 5.28e-11 ***</span></span>
+<span id="cb17-52"><a href="#cb17-52" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; alpha33  0.278210   0.040201   6.920 4.50e-12 ***</span></span>
+<span id="cb17-53"><a href="#cb17-53" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; alpha34  0.456877   0.051018   8.955  &lt; 2e-16 ***</span></span>
+<span id="cb17-54"><a href="#cb17-54" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; beta1.1  0.934040   0.121411   7.693 1.44e-14 ***</span></span>
+<span id="cb17-55"><a href="#cb17-55" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; beta3.1  1.097560   0.094567  11.606  &lt; 2e-16 ***</span></span>
+<span id="cb17-56"><a href="#cb17-56" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; alpha1n -0.038311   0.017128  -2.237   0.0253 *  </span></span>
+<span id="cb17-57"><a href="#cb17-57" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; alpha1w  0.163844   0.031140   5.261 1.43e-07 ***</span></span>
+<span id="cb17-58"><a href="#cb17-58" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; alpha2n  0.164285   0.069767   2.355   0.0185 *  </span></span>
+<span id="cb17-59"><a href="#cb17-59" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; alpha2w  0.121636   0.060617   2.007   0.0448 *  </span></span>
+<span id="cb17-60"><a href="#cb17-60" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ---</span></span>
+<span id="cb17-61"><a href="#cb17-61" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</span></span>
+<span id="cb17-62"><a href="#cb17-62" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; --------------------------------------------</span></span></code></pre></div>
 </div>
 </div>
 
+
+
+<!-- code folding -->
 
 
 <!-- dynamically load mathjax for compatibility with self-contained -->

@@ -1,5 +1,6 @@
 setClassUnion("matrixORnumeric", c("matrix", "numeric"))
 setClassUnion("functionORNULL",members=c("function", "NULL"))
+setClassUnion("listORNULL",members=c("list", "NULL"))
 setClassUnion("matrixORnumericORfunction", c("matrix", "numeric", "function"))
 
 #' An S4 class to represent an exponential marked Hawkes model
@@ -11,6 +12,7 @@ setClassUnion("matrixORnumericORfunction", c("matrix", "numeric", "function"))
 #'
 #' \eqn{\mu} is base intensity.
 #' This is generally a constant vector but can be extended to stochastic processes.
+#' Currently, piecewise constant mu is also possible. mu is left continous.
 #'
 #' \eqn{\alpha} is a constant matrix which represents impacts on intensities after events.
 #' It is represented by slot \code{mu}.
@@ -31,8 +33,10 @@ setClassUnion("matrixORnumericORfunction", c("matrix", "numeric", "function"))
 #' @slot alpha numeric value or matrix or function, if numeric, automatically converted to matrix, exciting term
 #' @slot beta numeric value or matrix or function, if numeric,, automatically converted to matrix, exponential decay
 #' @slot dimens dimension of the model
-#' @slot rmark a function that represets mark for counting process
+#' @slot rmark a function that generates mark for counting process, for simulation
+#' @slot dmark a density function for mark, for estimation
 #' @slot impact a function that describe the after impact of mark to lambda
+#' @slot type_col_map used for multiple kernel
 #'
 #' @examples
 #' MU <- matrix(c(0.2), nrow = 2)
@@ -48,7 +52,9 @@ setClass("hspec",
     beta = "matrixORnumericORfunction",
     dimens = "numeric",
     rmark = "functionORNULL",
-    impact = "functionORNULL"
+    dmark = "functionORNULL",
+    impact = "functionORNULL",
+    type_col_map = "listORNULL"
   )
 )
 
@@ -69,8 +75,8 @@ setClass("hspec",
 setMethod(
   "initialize",
   "hspec",
-  function(.Object, mu, alpha, beta, dimens=NULL,
-           rmark=NULL,  impact=NULL, stability_check=FALSE){
+  function(.Object, mu, alpha, beta, impact=NULL, type_col_map = NULL, dimens=NULL,
+           rmark=NULL, dmark = NULL, stability_check=FALSE){
 
     # If rmark is not provided, then rmark is constant 1.
     if (is.null(rmark)) rmark <- function(...) 1
@@ -98,7 +104,14 @@ setMethod(
     } else {
       .Object@beta <- beta
     }
+#
+#     if( !is.list(type_col_map)){
+#       .Object@type_col_map <-  list(type_col_map)
+#     } else {
+#       .Object@type_col_map <- type_col_map
+#     }
 
+    .Object@type_col_map <- type_col_map
     # set dimens
     if( is.null(dimens)){
       if( is.matrix(.Object@mu) ){
@@ -117,7 +130,9 @@ setMethod(
     }
 
 
+    .Object@dmark <- dmark
     .Object@impact <- impact
+
 
     # Check spectral radius, only works for non marked model
     if ( stability_check==TRUE && max(abs(eigen(alpha/beta)$values)) > 1)
