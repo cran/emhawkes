@@ -123,6 +123,7 @@ as.unique.vector <- function(M, notation, sep="."){
 
 as.param <- function(M, prefix, reduced){
   if (is.function(M)){
+    # when the argument M is a function, extract the parameter from the first argument of M
     prs <- eval(formals(M)[[1]])
   } else{
     if(reduced){
@@ -158,6 +159,12 @@ setting <- function(object){
   } else{
     beta <- object@beta
   }
+  if (is.function(object@eta)){
+    eta <- evalf(object@eta)
+  } else{
+    eta <- object@eta
+  }
+
 
   rmark <- object@rmark
   dmark <- object@dmark
@@ -167,7 +174,7 @@ setting <- function(object){
   # dimension of Hawkes process
   dimens <- object@dimens
 
-  list(mu = mu, alpha = alpha, beta = beta, impact = impact, rmark = rmark, dmark = dmark, dimens = dimens)
+  list(mu = mu, alpha = alpha, beta = beta, eta = eta, impact = impact, rmark = rmark, dmark = dmark, dimens = dimens)
 
 }
 
