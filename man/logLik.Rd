@@ -3,6 +3,7 @@
 \docType{methods}
 \name{logLik,hspec-method}
 \alias{logLik,hspec-method}
+\alias{logLik}
 \title{Compute the Log-Likelihood Function}
 \usage{
 \S4method{logLik}{hspec}(
@@ -14,7 +15,7 @@
   Nc = NULL,
   N0 = NULL,
   Nc0 = NULL,
-  lambda_component0 = NULL,
+  lambda_component0 = "auto",
   infer = FALSE,
   ...
 )
@@ -28,25 +29,92 @@
 
 \item{mark}{A vector of mark (jump) sizes, starting with zero.}
 
-\item{N}{A matrix representing counting processes.}
+\item{N}{Optional cumulative event-count matrix, with one row per input row
+and one column per event type. Each row contains counts after that event.}
 
-\item{Nc}{A matrix of counting processes weighted by mark sizes.}
+\item{Nc}{Optional cumulative mark-total matrix with the same shape as \code{N}.}
 
-\item{N0}{A matrix of initial values for \code{N}.}
+\item{N0}{Initial event counts: a finite scalar or one value per event type.
+If omitted, use the first row of supplied \code{N}, or zero when \code{N} is absent.}
 
-\item{Nc0}{A matrix of initial values for \code{Nc}.}
+\item{Nc0}{Initial mark totals: a finite scalar or one value per event type.
+If omitted, use the first row of supplied \code{Nc}, or zero when \code{Nc} is absent.}
 
-\item{lambda_component0}{Initial values for the lambda component \eqn{\lambda_{ij}}.
-Can be a numeric value or a matrix.
-Must have the same number of rows and columns as \code{alpha} or \code{beta} in \code{object}.}
+\item{lambda_component0}{Initial intensity components \eqn{\lambda_{ij}(0)},
+excluding the baseline \code{mu}.
+A finite scalar is expanded to every kernel component. A matrix must match
+the shape of \code{alpha} and \code{beta}. \code{"auto"} (also \code{NULL}) selects unconditional
+component means for supported stable constant numeric linear models, and zero
+otherwise. \code{"mean"} requires supported finite means; \code{"zero"} fixes zero
+components. The selected rule is reported once.
+Mean initialization excludes nonzero \code{eta}, impact callbacks and custom
+residual distributions. Function-valued core parameters use zero in \code{"auto"}.}
 
-\item{infer}{Logical}
+\item{infer}{Logical; if \code{TRUE}, return intensity paths and residual processes
+together with the likelihood.}
 
 \item{...}{Additional arguments passed to or from other methods.}
 }
+\value{
+With \code{infer = FALSE}, a length-one numeric vector named \code{loglikelihood}.
+With \code{infer = TRUE}, a list containing:
+\itemize{
+\item \code{loglikelihood}: the same likelihood value.
+\item \code{lambda} and \code{rambda}: intensity matrices immediately before and after events.
+\item \code{lambda_component} and \code{rambda_component}: the corresponding kernel components,
+with columns ordered by intensity row, then kernel column.
+\item \code{res_process1}, ..., \code{res_processD}: residuals between successive events of
+each type. Types with fewer than two events have empty residual vectors.
+}
+
+Intensity matrices include the initial row. For residual-distribution models,
+\code{res_process} values use the specified distribution and \code{eres_process1}, ...,
+\code{eres_processD} give their unit-exponential transforms.
+}
 \description{
-Calculates the log-likelihood for the Hawkes model.
+Evaluate a specified model's likelihood, with optional intensity and residual paths.
+}
+\details{
+The first row represents the initial state and is not an event.
+Omit \code{type} for a univariate model and \code{mark} for unit marks. The observation
+vectors have the same length. The likelihood ends at the last supplied event.
+Counting-process rows contain values after the corresponding event.
+Supplied \code{N} and \code{Nc} matrices must agree with \code{type}, \code{mark}, and any
+supplied initial counts. Event order is preserved, including zero intervals.
+Component functions receive the arguments they declare; functions with \code{...}
+receive the available event context. Intensity histories are \code{NULL} before
+initialization. Baseline functions use \code{n - 1} to access the preceding event.
+If initial intensity components are omitted, they are determined from the
+supplied model. For a fitted model, use \code{\link[=fitted_hspec]{fitted_hspec()}} with the arguments
+returned by \code{\link[=fit_initial_state]{fit_initial_state()}} to preserve the fit's initialization setting.
+
+With the default automatic selection, standalone \code{logLik()} uses the Rcpp
+engine for numeric Hawkes specifications and parameter-only component functions.
+These functions have only \code{param} as an argument and return plain numeric
+matrices. Their defaults are evaluated as in the R engine; no Jacobian is
+required. This supports likelihood values and, with \code{infer = TRUE}, intensity
+paths and residuals. Captured inputs must remain fixed and callbacks must be
+deterministic. Observed-state \code{impact} functions may also use \code{n}, \code{N}, \code{Nc},
+marks, types, times and resolved core matrices. They must return finite plain
+numeric matrices matching the kernel dimensions. Each function retains its own
+default parameters; standalone evaluation does not apply fitting's sharing rules.
+Observed baseline functions may use event context, excluding latent intensities,
+and return finite nonnegative dimensions-by-one matrices. Sequential impacts
+may explicitly request \code{lambda}, \code{lambda_component}, or \code{lambda_component_n}.
+They receive the state before the jump. The last post-event intensity uses
+the next baseline, as in R. Mark densities, residual distributions, unsupported
+function signatures, and classed numeric inputs use the R engine. \code{rmark} and \code{rresidual} are simulation generators and
+do not by themselves prevent numeric likelihood acceleration.
+Set \code{options(emhawkes.engine = "r")} for the R calculation, \code{"auto"} for
+automatic selection, or \code{"cpp"} to require a supported specification.
+Setting \code{"cpp"} is not needed for automatic acceleration. The engine supports
+unequal decay rates within a row and multi-kernel mappings. During fitting,
+\code{\link[=hfit]{hfit()}} also supports C++ adapters for the callback models documented there.
+Engine selection does not change simulation or enable analytic gradients.
+Automatic capability fallback may evaluate impact callbacks again. User errors
+propagate; deterministic callbacks with fixed captured inputs are required.
 }
 \seealso{
+\code{\link[=fitted_hspec]{fitted_hspec()}}, \code{\link[=fit_initial_state]{fit_initial_state()}},
 \code{\link{hspec-class}}, \code{\link{hfit,hspec-method}}
 }

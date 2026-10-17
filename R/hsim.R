@@ -1,27 +1,78 @@
-#' @include hspec.R hmoment.R utilities.R
+#' @include hspec.R hmoment.R utilities.R hinterface.R
 NULL
 
-#' Simulate multivariate Hawkes process with exponential kernel.
+#' Simulate an Exponential Hawkes Process
 #'
 #' @description
-#' The method simulate multivariate Hawkes processes.
-#' The object \code{\link{hspec-class}} contains the parameter values such as \code{mu}, \code{alpha}, \code{beta}.
-#' The mark (jump) structure may or may not be included.
-#' It returns an object of class \code{\link{hreal}} which contains \code{inter_arrival}, \code{arrival},
-#' \code{type}, \code{mark}, \code{N}, \code{Nc}, \code{lambda}, \code{lambda_component}, \code{rambda}, \code{rambda_component}.
+#' Simulate a univariate or multivariate path from an \code{\link{hspec-class}}
+#' specification, including marked and multi-kernel models.
 #'
 #'
 #' @param object \code{\link{hspec-class}}. S4 object that specifies the parameter values.
-#' @param size Number of observations.
-#' @param lambda_component0 Initial values for the lambda component \eqn{\lambda_{ij}}.
-#' Can be a numeric value or a matrix.
-#' Must have the same number of rows and columns as \code{alpha} or \code{beta} in \code{object}.
-#' @param N0 Starting values of N with default value 0.
-#' @param Nc0 Starting values of Nc with default value 0.
-#' @param verbose Logical. If \code{TRUE}, print progress messages during the simulation. Default is \code{FALSE}.
+#' @param size Positive integer giving the number of output rows, including the
+#' initial state. At most `size - 1` events are simulated.
+#' @param lambda_component0 Initial intensity components \eqn{\lambda_{ij}(0)},
+#' excluding the baseline `mu`.
+#' A finite scalar is expanded to every kernel component. A matrix must match
+#' the shape of `alpha` and `beta`. The default `"auto"` (also `NULL`) uses
+#' unconditional component means for supported stable constant numeric linear models,
+#' and zero components otherwise. `"mean"` requires supported finite means;
+#' `"zero"` starts from baseline intensities. Selection is reported once, and
+#' zero initialization recommends supplying components explicitly.
+#' Other size adjustments are
+#' deprecated and produce a warning.
+#' Mean initialization excludes nonzero `eta`, impact callbacks and custom
+#' residual distributions. Function-valued core parameters use zero in `"auto"`.
+#' @param N0 Initial event counts: a finite scalar or one value per event type.
+#' The default is zero.
+#' @param Nc0 Initial mark totals: a finite scalar or one value per event type.
+#' The default is zero.
+#' @param verbose Logical. Controls additional progress output; initialization
+#' selection is reported independently. Default is \code{FALSE}.
 #' @param ... Further arguments passed to or from other methods.
 #'
-#' @return \code{\link{hreal}} S3-object, summary of the Hawkes process realization.
+#' @return An S3 \code{\link{hreal}} object containing the simulated path,
+#' counting processes, and intensity components.
+#' If no further event can occur, the result contains only the generated rows
+#' and a warning reports the early termination. The initial row is included.
+#'
+#' @details
+#' The first row is the initial state. Its `inter_arrival`, `type`, and `mark`
+#' entries are zero; its `N` and `Nc` rows contain `N0` and `Nc0`.
+#' Event types identify intensity rows. After a type `i` event, `type_col_map[[i]]`
+#' selects the kernel columns to update; without a mapping, column `i` is updated.
+#'
+#' Simulation requires finite, nonnegative baselines. Signed kernel components
+#' are allowed when their sum is nonnegative and decreasing between events.
+#' For equal decay rates within a row, this requires a nonnegative row sum.
+#' For unequal rates, the simulator uses a sufficient condition: group components
+#' by decay rate, multiply each group sum by its rate, and check that cumulative
+#' sums in increasing rate order are nonnegative.
+#'
+#' Simulation automatically uses an Rcpp event loop for plain numeric `mu`,
+#' `alpha`, and `beta`, including functions with exactly one `param` argument
+#' resolved to such values, and positive baselines in every dimension. This includes
+#' multivariate and mapped multi-kernel models with equal or unequal decay rates
+#' within a row. Equal-rate models use direct arrival sampling; unequal-rate
+#' models retain the R algorithm's thinning and rejected draws. Equal-rate models
+#' also support numeric `eta`, `rmark` functions requesting no event context, and
+#' `impact` functions requesting only `lambda_component_n` or no event context.
+#' Other optional arguments keep their defaults. Marks and impact components must
+#' be real numeric values. User functions still run in R; RNG state is synchronized
+#' before and after every call, including errors. Other event callbacks, `...`,
+#' event-dependent baselines, custom residual distributions, zero baselines, and
+#' callback models with unequal rates use R. This selection is independent of `emhawkes.engine`,
+#' which controls likelihood calculations. Both paths use R's RNG in the same order.
+#' Arrival calculations use the current component state.
+#' Callbacks receive the arguments they request; callbacks with `...` continue
+#' to receive the full supported context. Requesting full histories can increase
+#' copying costs for long paths.
+#'
+#' To simulate an estimated model, use [fitted_hspec()] and
+#' pass [fit_initial_state()] to `hsim()` with `do.call()`. These arguments describe
+#' the start of the fitted observation window. Continuing after its last event
+#' requires the state at that event.
+#' @seealso [fitted_hspec()], [fit_initial_state()], [logLik()]
 #'
 #' @rdname hsim
 #' @docType methods
@@ -44,26 +95,36 @@ NULL
 #'
 #' @export
 setGeneric("hsim", function(object, size = 100,
-                            lambda_component0 = NULL,  N0 = NULL, Nc0 = NULL,
+                            lambda_component0 = "auto",  N0 = NULL, Nc0 = NULL,
                             verbose = FALSE, ...)
   standardGeneric("hsim"))
 
 #' @rdname hsim
-setMethod(
-  f="hsim",
-  signature(object = "hspec"),
-  definition = function(object, size = 100,
-                        lambda_component0 = NULL,  N0 = NULL, Nc0 = NULL,
-                        verbose = FALSE, ...){
+setMethod("hsim", "hspec", function(object, size = 100,
+    lambda_component0 = "auto", N0 = NULL, Nc0 = NULL, verbose = FALSE, ...) {
+  simulate_hawkes(object, size, lambda_component0, N0, Nc0, verbose, ...)
+})
 
+# Internal reference selector: independent of the likelihood engine option.
+simulate_hawkes_r <- function(object, size = 100, lambda_component0 = "auto",
+    N0 = NULL, Nc0 = NULL, verbose = FALSE, ...) {
+  simulate_hawkes(object, size, lambda_component0, N0, Nc0, verbose, ...,
+                  .native = FALSE)
+}
+
+simulate_hawkes <- function(object, size = 100, lambda_component0 = "auto",
+    N0 = NULL, Nc0 = NULL, verbose = FALSE, ..., .native = TRUE) {
     # Process additional arguments passed through '...'
     additional_argument <- list(...)
+    if (length(size) != 1L || !is.finite(size) || size < 1 || size != floor(size)) {
+      stop("size must be a positive integer, including the initial row.")
+    }
 
     # Check if "lambda0" is among the additional arguments
     if ("lambda0" %in% names(additional_argument)) {
 
       # Issue a warning to inform the user that "lambda0" is deprecated
-      warning("lambda0 is deprecated; instead use lambda_component0.")
+      warning("'lambda0' is deprecated; use 'lambda_component0' instead.", call. = FALSE)
 
       # Assign the value of "lambda0" to the new parameter name "lambda_component0"
       lambda_component0 <- additional_argument[["lambda0"]]
@@ -76,6 +137,10 @@ setMethod(
     alpha <- plist$alpha
     beta <- plist$beta
     eta <- plist$eta
+    callbacks <- model_callback_plans(object, simulation = TRUE)
+    mu_call <- prepare_component_call(callbacks$mu)
+    impact_call <- prepare_component_call(callbacks$impact)
+    rmark_call <- prepare_component_call(callbacks$rmark)
 
     # Check for each type, beta are equal
     all_rows_beta_equal <- TRUE
@@ -89,6 +154,31 @@ setMethod(
     }
 
     dimens <- object@dimens
+    rate_groups <- lapply(seq_len(dimens), function(i) {
+      split(seq_len(ncol(beta)), factor(beta[i, ], levels = sort(unique(beta[i, ]))))
+    })
+    valid_components <- function(component) {
+      if (any(!is.finite(component))) return(FALSE)
+      if (all(component >= 0)) return(TRUE)
+      component <- matrix(component, nrow = dimens)
+      for (i in seq_len(dimens)) {
+        if (all(component[i, ] >= 0)) next
+        # Equal-rate resets can cancel to zero up to floating-point error.
+        if (length(rate_groups[[i]]) == 1L) {
+          weight <- component[i, ]
+          cumulative <- sum(weight)
+        } else {
+          weight <- component[i, ] * beta[i, ]
+          cumulative <- cumsum(vapply(rate_groups[[i]], function(j) sum(weight[j]), numeric(1)))
+        }
+        scale <- sum(abs(weight))
+        # Abel summation: nonnegative cumulative derivative weights ensure a
+        # decreasing excitation, whose limit is zero. It is thus nonnegative.
+        if (!is.finite(scale) || any(!is.finite(cumulative)) ||
+            any(cumulative < -32 * .Machine$double.eps * max(1, scale))) return(FALSE)
+      }
+      TRUE
+    }
 
     N <- matrix(numeric(length = dimens * size), ncol = dimens)
     Nc  <- matrix(numeric(length = dimens * size), ncol = dimens)
@@ -98,52 +188,78 @@ setMethod(
     type <- inter_arrival <- numeric(length = size)
     mark <- c(0, rep(1, size-1))
 
-    if (!is.null(N0)) N[1,] <- N0
-    if (!is.null(Nc0)) Nc[1,] <- Nc0
+    N0 <- normalize_count_initial(N0, dimens, "N0")
+    Nc0 <- normalize_count_initial(Nc0, dimens, "Nc0")
+    N[1,] <- N0
+    Nc[1,] <- Nc0
+    lambda <- lambda_component <- lambda_component_n <- NULL
 
     if (is.function(mu)){
-      mu0 <- mu(n = 1, mark = mark, type = type, inter_arrival = inter_arrival,
-                 N = N, Nc = Nc,
-                 alpha = alpha, beta = beta)
+      mu0 <- mu_call(mu, 1, mark, type, inter_arrival, N, Nc, lambda,
+                     lambda_component, lambda_component_n, mu, alpha, beta)
     } else {
       mu0 <- mu
     }
 
-    # default lambda_component0
-    if(!is.null(object@type_col_map)){
-      if(length(object@type_col_map) > 0 & is.null(lambda_component0)){
-        stop("Initialization Error: 'lambda_component0' must be specified.
-             This ensures the model starts with a valid configuration.
-             Please review the input parameters and provide valid initial values for 'lambda_component0'.")
-        }
+    initialization <- select_hawkes_initial(object, lambda_component0, ncol(beta), legacy = TRUE)
+    lambda_component0 <- if (initialization$used == "mean")
+      hawkes_mean_state(list(mu = mu0, alpha = alpha, beta = beta), object@type_col_map)$value else initialization$value
+    lambda_component_n <- lambda_component0
+    if (!valid_components(lambda_component0)) {
+      stop("Initial kernel components must define nonnegative, decreasing excitation; signed components must satisfy the decay-rate cumulative-sum condition (see ?hsim).")
     }
+    message_hawkes_initial(initialization)
 
-
-    if(!is.null(lambda_component0)){
-
-      # If the dimensions of model and lambda_component0 do not match, lambda_component0 will be adjusted
-      if (dimens * ncol(beta) > length(lambda_component0)){
-        warning("The size of lambda_component0 does not match to the dimension of the model and is adjusted. \n
-                lambda_component0 is now :")
-        lambda_component0 <- rep(lambda_component0, dimens * ncol(beta))
+    # Decide support before entering any RNG scope; never restart after draws.
+    if (.native && is.null(native_simulation_reason(object, mu, alpha, beta,
+                                                   all_rows_beta_equal, eta, callbacks))) {
+      mapping <- if (is.null(object@type_col_map)) as.list(seq_len(dimens)) else object@type_col_map
+      mapping <- lapply(mapping, function(columns) as.integer(columns) - 1L)
+      if (is.null(eta) && is.null(object@impact) && is.null(object@rmark)) {
+        simulate_numeric <- if (all_rows_beta_equal) hawkes_simulate_equal_cpp else hawkes_simulate_cpp
+        out <- simulate_numeric(as.numeric(mu), alpha, beta, lambda_component0,
+          mapping, N, Nc, inter_arrival, type, mark)
+      } else {
+        # Keep argument selection, defaults and R replacement semantics in R.
+        # The original functions and their lexical environments are unchanged.
+        mark_callback <- if (is.null(object@rmark)) NULL else function() {
+          value <- numeric(1)
+          value[1] <- rmark_call(object@rmark)
+          if (!is.numeric(value)) value <- 0 + value
+          value
+        }
+        impact_callback <- if (is.null(object@impact)) NULL else function(lambda_component_n, event) {
+          value <- impact_call(object@impact, lambda_component_n = lambda_component_n)
+          addition <- matrix(0, dimens, ncol(beta))
+          columns <- if (is.null(object@type_col_map)) event else object@type_col_map[[event]]
+          addition[, columns] <- value[, columns]
+          if (!is.numeric(addition)) addition <- 0 + addition
+          addition
+        }
+        # The R recursion strips state attributes after each event; the product
+        # inherits beta's dimnames/attributes, including on the first event.
+        component_template <- lambda_component0 * exp(-beta * 0)
+        out <- hawkes_simulate_callbacks_cpp(as.numeric(mu), alpha, beta,
+          lambda_component0, mapping, N, Nc, inter_arrival, type, mark,
+          eta, mark_callback, impact_callback, component_template)
       }
-      if (dimens * ncol(beta) < length(lambda_component0)){
-        warning("The size of lambda_component0 does not match to the dimension of the model and is adjusted.\n
-                lambda_component0 is now :")
-        lambda_component0 <- lambda_component0[1:dimens * ncol(beta)]
+      colnames(out$lambda) <- paste0("lambda", seq_len(dimens))
+      colnames(out$rambda) <- paste0("rambda", seq_len(dimens))
+      component_names <- as.vector(t(outer(paste0("lambda", seq_len(dimens)),
+        seq_len(ncol(beta)), FUN = paste0)))
+      colnames(out$lambda_component) <- component_names
+      colnames(out$rambda_component) <- sub("^lambda", "rambda", component_names)
+      if (out$generated < size) {
+        rows <- seq_len(out$generated)
+        for (name in c("inter_arrival", "type", "mark")) out[[name]] <- out[[name]][rows]
+        for (name in c("N", "Nc", "lambda", "rambda", "lambda_component", "rambda_component"))
+          out[[name]] <- out[[name]][rows, , drop = FALSE]
       }
-
-      lambda_component0 <- as.matrix(lambda_component0, nrow = dimens)
-
-    } else {
-      # default lambda_component0
-      if(verbose == TRUE){
-        message("Default initial values for 'lambda_component0' will be internally calculated and used for the simulation.")
-      }
-
-      lambda_component0 <- get_lambda0(object, mark = mark, type = type, inter_arrival = inter_arrival,
-                             N = N, Nc = Nc,
-                             mu, alpha = alpha, beta = beta)
+      return(structure(list(hspec = object, inter_arrival = out$inter_arrival,
+        arrival = cumsum(out$inter_arrival), type = out$type, mark = out$mark,
+        N = out$N, Nc = out$Nc, lambda = out$lambda,
+        lambda_component = out$lambda_component, rambda = out$rambda,
+        rambda_component = out$rambda_component), class = "hreal"))
     }
 
     # Preallocation for lambdas and Ns and set initial values for lambdas
@@ -186,9 +302,8 @@ setMethod(
     # Mathematically, mu is a left continuous process, therefore, this is equivalent to mu(1 + dt)
     if (is.function(mu)){
       # Even if, we pass n=2 as argument, mu function probably use information up to n-1.
-      rmu_n <- mu(n = 2, mark = mark, type = type, inter_arrival = inter_arrival,
-                 N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
-                 alpha = alpha, beta = beta)
+      rmu_n <- mu_call(mu, 2, mark, type, inter_arrival, N, Nc, lambda,
+                     lambda_component, lambda_component_n, mu, alpha, beta)
     } else{
       rmu_n <- mu
     }
@@ -207,24 +322,37 @@ setMethod(
 
 
 
-    #current_rambda_component <- lambda_component0
-    for (n in 2:size) {
+    # Keep the state used for the next event separate from stored output.
+    current_rambda_component <- lambda_component0
+    generated <- 1L
+    for (n in seq_len(size - 1L) + 1L) {
 
       # only piecewise constant mu is available, mu is left continuous.
       # rmu_n is previously defined right continuous version.
       mu_n <- rmu_n
+      if (length(mu_n) != dimens || any(!is.finite(mu_n)) || any(mu_n < 0) ||
+          !valid_components(current_rambda_component)) {
+        stop("Simulation requires finite, nonnegative baselines and nonnegative, decreasing excitation; signed components must satisfy the decay-rate cumulative-sum condition (see ?hsim).")
+      }
 
 
       ### Determine the next arrival, type and mark #######################################################
-      res <- handle_arrival(n = n, rambda_component = rambda_component,
+      res <- handle_arrival(n = n, current_component = current_rambda_component,
                             mu = mu_n, alpha = alpha, beta = beta, dimens = object@dimens,
                             type_col_map = object@type_col_map,
                             rresidual = object@rresidual, dresidual = object@dresidual,
                             presidual = object@presidual, all_rows_beta_equal = all_rows_beta_equal)
 
+      if (is.infinite(res["inter_arrival"])) {
+        warning(sprintf("Simulation stopped early: no further event occurs on this path. Returned %d of %.0f requested rows (including the initial row).",
+                        generated, size), call. = FALSE)
+        break
+      }
+
 
       inter_arrival[n] <- res["inter_arrival"]
       type[n] <- res["type"]
+      generated <- n
 
 
       N[n, ] <- N[n-1, ]
@@ -233,9 +361,8 @@ setMethod(
       # generate a mark for Hawkes
       if( !is.null(object@rmark) ){
         # mark may depends on other variables
-        mark[n] <- object@rmark(n = n, Nc = Nc, N = N,
-                                lambda = lambda, lambda_component = lambda_component,
-                                type = type)
+        mark[n] <- rmark_call(object@rmark, n, mark, type, inter_arrival, N, Nc, lambda,
+                     lambda_component, lambda_component_n, mu, alpha, beta)
       }
 
       Nc[n, ] <- Nc[n-1, ]
@@ -248,7 +375,7 @@ setMethod(
 
       decayed <- exp(-beta * inter_arrival[n])
 
-      decayed_lambda <- lambda_component_n <- matrix(rambda_component[n-1,], nrow = dimens, byrow = TRUE) * decayed
+      decayed_lambda <- lambda_component_n <- current_rambda_component * decayed
 
       # update lambda
       lambda_component[n, ] <- t(decayed_lambda)
@@ -283,10 +410,8 @@ setMethod(
         # impact by mark
         impact_mark <- matrix(rep(0, dimens * ncol(beta)), nrow = dimens)
 
-        impact_res <- object@impact(n = n, mark = mark, type = type, inter_arrival = inter_arrival,
-                                    N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
-                                    lambda_component_n = lambda_component_n,
-                                    mu = mu, alpha = alpha, beta = beta)
+        impact_res <- impact_call(object@impact, n, mark, type, inter_arrival, N, Nc, lambda,
+                     lambda_component, lambda_component_n, mu, alpha, beta)
 
         impact_mark[ , types] <- impact_res[ , types]
 
@@ -297,19 +422,28 @@ setMethod(
       # update rambda
       # rambda_component = {"rambda11", "rambda12", ..., "rambda21", "rambda22", ...}
       rambda_component[n, ] <- t(new_lambda)
+      # The history row used previously had no matrix dimnames.
+      current_rambda_component <- matrix(new_lambda, nrow = dimens)
 
 
 
       if (is.function(mu)){
-        rmu_n <- mu(n = n + 1, mark = mark, type = type, inter_arrival = inter_arrival,
-                    N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
-                    alpha = alpha, beta = beta)
+        rmu_n <- mu_call(mu, n + 1, mark, type, inter_arrival, N, Nc, lambda,
+                     lambda_component, lambda_component_n, mu, alpha, beta)
       } else{
         rmu_n <- mu
       }
       rambda[n, ] <- rmu_n + rowSums(new_lambda)
 
     }
+
+    rows <- seq_len(generated)
+    inter_arrival <- inter_arrival[rows]; type <- type[rows]; mark <- mark[rows]
+    N <- N[rows, , drop = FALSE]; Nc <- Nc[rows, , drop = FALSE]
+    lambda <- lambda[rows, , drop = FALSE]
+    rambda <- rambda[rows, , drop = FALSE]
+    lambda_component <- lambda_component[rows, , drop = FALSE]
+    rambda_component <- rambda_component[rows, , drop = FALSE]
 
     realization <- list(object, inter_arrival, cumsum(inter_arrival), type, mark,
                         N, Nc, lambda, lambda_component, rambda, rambda_component)
@@ -318,7 +452,31 @@ setMethod(
     class(realization) <- c("hreal")
 
     realization
+}
+
+# Check resolved parameters without evaluating user functions a second time.
+native_simulation_reason <- function(object, mu, alpha, beta, equal,
+                                     eta = object@eta, callbacks = NULL) {
+  values <- list(mu, alpha, beta, eta)
+  if (any(vapply(values, is.function, logical(1)))) return("function_parameters")
+  if (any(vapply(values, function(x) !is.null(x) && !is.numeric(x), logical(1))))
+    return("nonnumeric_parameters")
+  if (any(vapply(values, is.object, logical(1)))) return("classed_parameters")
+  hybrid <- !is.null(eta) || !is.null(object@impact) || !is.null(object@rmark)
+  if (hybrid) {
+    if (!equal) return("callback_unequal_decays")
+    if (is.null(callbacks)) callbacks <- model_callback_plans(object, simulation = TRUE)
+    # ... always requests the full context, even if its body ignores it.
+    if (length(callbacks$rmark) ||
+        length(setdiff(callbacks$impact, "lambda_component_n"))) return("event_context")
+    if (!is.null(eta) && (any(!is.finite(eta)) || !identical(dim(eta), dim(beta))))
+      return("invalid_eta")
   }
-)
-
-
+  if (!is.null(object@rresidual) || !is.null(object@dresidual) ||
+      !is.null(object@presidual) || !is.null(object@qresidual)) return("residual_distribution")
+  if (any(!is.finite(mu)) || any(mu <= 0)) return("nonpositive_baseline")
+  if (any(!is.finite(alpha)) || any(!is.finite(beta)) || any(beta <= 0)) return("invalid_parameters")
+  if (is.object(object@type_col_map) || any(vapply(object@type_col_map, is.object, logical(1))))
+    return("classed_mapping")
+  NULL
+}

@@ -13,6 +13,10 @@ rarrival <- function(...){
   dimens <- args$dimens
   type_col_map <- args$type_col_map
   n <- args$n
+  current_component <- args$current_component
+  if (is.null(current_component)) {
+    current_component <- matrix(rambda_component[n-1,], nrow = dimens, byrow = TRUE)
+  }
 
 
   if (args$all_rows_beta_equal){
@@ -20,39 +24,27 @@ rarrival <- function(...){
     #mu can be zero, so warning is turned off for a moment
     candidate_arrival <- suppressWarnings(stats::rexp(dimens, rate = mu))
 
-    rowSums_rambda_component_n_miuns_1 <- rowSums(matrix(rambda_component[n-1,], nrow = dimens, byrow = TRUE))
+    rowSums_rambda_component_n_miuns_1 <- rowSums(current_component)
 
-    rowSums_rambda_component_n_miuns_1[abs(rowSums_rambda_component_n_miuns_1) < 1e-10] <- 0
-
-    matrixD <- 1 + beta[,1] * log(stats::runif(dimens)) / rowSums_rambda_component_n_miuns_1
-
-    candidate_arrival <- cbind(candidate_arrival, -1 / beta[,1] * log(pmax(matrixD, 0)))
+    scaled_log_u <- beta[,1] * log(stats::runif(dimens)) / rowSums_rambda_component_n_miuns_1
+    excited_arrival <- rep(Inf, dimens)
+    finite_arrival <- rowSums_rambda_component_n_miuns_1 > 0 & scaled_log_u > -1
+    excited_arrival[finite_arrival] <- -log1p(scaled_log_u[finite_arrival]) / beta[finite_arrival, 1]
+    candidate_arrival <- cbind(candidate_arrival, excited_arrival)
 
     inter_arrival <- min(candidate_arrival, na.rm = TRUE)
 
-    minIndex <- which(candidate_arrival == inter_arrival, arr.ind = TRUE)
-
-    type <- minIndex[1]
-
-    if(length(type_col_map) > 0){
-      for (j in 1:length(type_col_map)) {
-        if (minIndex[1] %in% type_col_map[[j]]){
-          type <- j
-          break
-        }
-      }
-    }
+    # Rows identify event types; kernel column mappings do not change them.
+    type <- if (is.finite(inter_arrival)) which(candidate_arrival == inter_arrival, arr.ind = TRUE)[1, 1] else NA_real_
 
 
   } else{
 
     # thinning algorithm
 
-    rambda_component_n_miuns_1 <- matrix(rambda_component[n-1,], nrow = dimens, byrow = TRUE)
+    rambda_component_n_miuns_1 <- current_component
     rowSums_rambda_component_n_miuns_1 <- rowSums(rambda_component_n_miuns_1)
     rambda_n_minus_1 <- rowSums_rambda_component_n_miuns_1 + mu
-
-    rambda_n_minus_1[abs(rambda_n_minus_1) < 1e-10] <- 0
 
     candidate_arrival <- rep(0, dimens)
 
@@ -64,6 +56,11 @@ rarrival <- function(...){
       if(rambda_n_minus_1[i] == 0){
 
         candidate_arrival[i] <- Inf
+
+      } else if (mu[i] == 0) {
+
+        candidate_arrival[i] <- invert_exp_hazard(stats::rexp(1),
+          rambda_component_n_miuns_1[i, ], 0, beta[i, ])
 
       } else {
 
@@ -81,6 +78,9 @@ rarrival <- function(...){
           # This is where the impact from past events (stored in current_lambda_component)
           # and the decay of this influence over time by beta are applied.
           f <- mu[i] + sum(rambda_component_n_miuns_1[i, ] * exp((- beta[i, ] * s)))
+          if (is.na(U) || is.na(f)) {
+            stop("Simulation encountered NaN during thinning; rescale time units to keep rates and waiting times representable.", call. = FALSE)
+          }
 
           # If the random value U is less than (f + mu),
           # accept s as the next event time and exit the loop.
@@ -95,11 +95,27 @@ rarrival <- function(...){
 
 
     inter_arrival <- min(candidate_arrival, na.rm = TRUE)
-    type <- which(candidate_arrival == inter_arrival)
+    type <- if (is.finite(inter_arrival)) which.min(candidate_arrival) else NA_real_
 
   }
 
-  c(inter_arrival = inter_arrival, type = type)
+  c(inter_arrival = unname(inter_arrival), type = unname(type))
+}
+
+# Invert a nonnegative, decaying intensity. A finite total hazard leaves
+# positive probability at an infinite waiting time.
+invert_exp_hazard <- function(target, component, mu, beta) {
+  if (length(target) != 1L || is.na(target) || target < 0) stop("Residual waiting times must be nonnegative.")
+  if (is.infinite(target)) return(Inf)
+  if (target == 0) return(0)
+  if (mu == 0 && target >= sum(component / beta)) return(Inf)
+  hazard <- function(time) mu * time + sum(integrate_exp_kernel(component, beta, time))
+  upper <- target / (mu + sum(component))
+  if (upper == 0) return(0)
+  while (is.finite(upper) && hazard(upper) < target) upper <- upper * 2
+  if (!is.finite(upper)) return(Inf)
+  upper * stats::uniroot(function(x) hazard(upper * x) - target,
+                        interval = c(0, 1), tol = 1e-12, check.conv = TRUE)$root
 }
 
 
@@ -110,7 +126,7 @@ phi <- function(tau, rowSum_rambda_component_n_miuns_1, mu, beta){
   # rambda means after jump intensity
   # for arrival time n, row sum of rambda component at n-1 is needed
 
-  mu * tau + rowSum_rambda_component_n_miuns_1  * (-exp(-beta * tau) + 1) / beta
+  mu * tau + integrate_exp_kernel(rowSum_rambda_component_n_miuns_1, beta, tau)
 
 }
 
@@ -119,7 +135,7 @@ phi_wo_mu <- function(tau, rowSum_rambda_component_n_miuns_1,  beta){
   # rambda means after jump intensity
   # for arrival time n, row sum of rambda component at n-1 is needed
 
-  rowSum_rambda_component_n_miuns_1  * (-exp(-beta * tau) + 1) / beta
+  integrate_exp_kernel(rowSum_rambda_component_n_miuns_1, beta, tau)
 
 }
 
@@ -149,6 +165,10 @@ darrival <- function(...){
   dresidual <- args$dresidual
   presidual <- args$presidual
   n <- args$n
+  current_component <- args$current_component
+  if (is.null(current_component)) {
+    current_component <- matrix(rambda_component[n-1,], nrow = dimens, byrow = TRUE)
+  }
   if(is.null(args$tol)) tol <- 1e-09
 
 
@@ -156,7 +176,7 @@ darrival <- function(...){
 
     #mu can be zero, so warning is turned off for a moment
 
-    rowSums_rambda_component_n_miuns_1 <- rowSums(matrix(rambda_component[n-1,], nrow = dimens, byrow = TRUE))
+    rowSums_rambda_component_n_miuns_1 <- rowSums(current_component)
 
     residuals_for_each_dimension <- rresidual(dimens)
 
@@ -164,17 +184,15 @@ darrival <- function(...){
 
     for (i in 1:dimens){
 
-      candidate_arrival[i] <- stats::uniroot(function(x) phi(x,
-                                                      rowSums_rambda_component_n_miuns_1[i],
-                                                      mu[i], beta[i, 1]) - residuals_for_each_dimension[i],
-                                      interval = c(0, 10000), tol = 1e-09)$root
+      candidate_arrival[i] <- invert_exp_hazard(residuals_for_each_dimension[i],
+        rowSums_rambda_component_n_miuns_1[i], mu[i], beta[i, 1])
 
     }
 
     inter_arrival <- min(candidate_arrival, na.rm = TRUE)
     minIndex <- which(candidate_arrival == inter_arrival, arr.ind = TRUE)
 
-    type <- minIndex[1]
+    type <- if (is.finite(inter_arrival)) minIndex[1] else NA_real_
 
 
     #if(length(type_col_map) > 0){
@@ -193,7 +211,7 @@ darrival <- function(...){
 
   }
 
-  c(inter_arrival = inter_arrival, type = type)
+  c(inter_arrival = unname(inter_arrival), type = unname(type))
 }
 
 
@@ -201,7 +219,8 @@ darrival <- function(...){
 #' @title Expected Inter-Arrival Time
 #' @description Computes the conditional expected time until the next event.
 #' @param object An object of class \code{hspec}.
-#' @param rambda_component Rambda component.
+#' @param rambda_component Finite nonnegative scalar: the current total excitation
+#' for the selected process dimension (sum its kernel components first).
 #' @param type Process dimension index (default is 1).
 #' @param mu Optional mu value (overrides object@mu if provided).
 #' @param beta Optional beta value (overrides object@beta if provided).
@@ -209,6 +228,12 @@ darrival <- function(...){
 #' @param max_upper Upper integration limit.
 #' @param subdivisions Number of subdivisions for numerical integration.
 #' @return Expected value of next inter-arrival time.
+#' @details
+#' This calculation assumes a constant baseline and a common decay rate within
+#' the selected row. With zero baseline, the result is `Inf` if there is positive
+#' probability of no further event. A custom residual law then requires
+#' `presidual` to determine this probability. A finite `max_upper` instead returns
+#' the truncated first moment, excluding waiting times above that limit.
 #'
 #' @rdname expected_tau
 #' @aliases expected_tau expected_tau,hspec-method
@@ -227,23 +252,67 @@ setMethod("expected_tau", signature(object = "hspec"),
                    max_upper = Inf,
                    subdivisions = 400L) {
 
-            # Use slot values if mu or beta not provided
+            if (!is.numeric(type) || is.complex(type) || length(type) != 1L ||
+                !is.finite(type) || type != floor(type) || type < 1 || type > object@dimens) {
+              stop("type must identify one process dimension.")
+            }
+            if (is.null(beta) && (is.function(object@beta) ||
+                any(object@beta[type, ] != object@beta[type, 1]))) {
+              stop("Provide a scalar beta or use equal decay rates within the selected row.")
+            }
+            if (is.null(mu) && is.function(object@mu)) stop("Provide a numeric scalar mu for a function-valued baseline.")
+            # Use slot values if mu or beta not provided.
             mu <- if (is.null(mu)) object@mu[type] else mu
             beta <- if (is.null(beta)) object@beta[type, 1] else beta
+            scalar <- function(x) is.numeric(x) && !is.complex(x) &&
+              length(x) == 1L && is.finite(x)
+            if (!scalar(mu) || mu < 0 || !scalar(beta) || beta <= 0 ||
+                !scalar(rambda_component) || rambda_component < 0) {
+              stop("mu and total excitation must be finite nonnegative scalars; beta must be finite and positive.")
+            }
+            if (!is.numeric(max_upper) || is.complex(max_upper) || length(max_upper) != 1L ||
+                is.na(max_upper) || max_upper < 0) stop("max_upper must be nonnegative or Inf.")
+            if (max_upper == 0) return(0)
+            if (is.infinite(max_upper) && mu == 0) {
+              if (is.null(object@dresidual)) return(Inf)
+              if (is.null(object@presidual)) stop("Zero-baseline expectations require presidual for a custom residual law.")
+              survival <- residual_cdf(object@presidual, rambda_component / beta,
+                                       lower.tail = FALSE, log.p = TRUE)
+              if (length(survival) != 1L || is.na(survival) || survival > 0)
+                stop("presidual must return a valid scalar probability.")
+              if (is.finite(survival)) return(Inf)
+            }
 
-            # Handle residual density
-            if (is.null(object@dresidual)) {
-              dresidual_fn <- function(x, param = NULL) stats::dexp(x)
-              default_param <- NULL
-            } else {
-              dresidual_fn <- object@dresidual
-              default_param <- formals(dresidual_fn)$param
+            # E[T] = integral S(t) dt. Log-time coordinates resolve both the
+            # short excitation scale and a long baseline tail without trying
+            # to integrate a broad density on the original time scale.
+            if (is.infinite(max_upper) &&
+                (is.null(object@dresidual) || !is.null(object@presidual))) {
+              if (is.null(object@dresidual) && rambda_component == 0) return(1 / mu)
+              if (is.null(object@dresidual) &&
+                  -rambda_component / beta - log(mu) > log(.Machine$double.xmax)) return(Inf)
+              breaks <- sort(unique(c(-Inf, -log(mu), -log(beta),
+                -log(max(mu, rambda_component)) - log1p(min(mu, rambda_component) / max(mu, rambda_component)), Inf)))
+              survival_integrand <- function(log_time) {
+                scaled_time <- exp(log(beta) + log_time)
+                log_weight <- log(-expm1(-scaled_time)) - log(beta)
+                log_weight[scaled_time == 0] <- log_time[scaled_time == 0]
+                hazard <- exp(log(mu) + log_time) + exp(log(rambda_component) + log_weight)
+                log_survival <- if (is.null(object@dresidual)) -hazard else
+                  residual_cdf(object@presidual, hazard, lower.tail = FALSE, log.p = TRUE)
+                exp(log_time + log_survival)
+              }
+              pieces <- vapply(seq_len(length(breaks) - 1L), function(i)
+                stats::integrate(survival_integrand, breaks[i], breaks[i + 1L],
+                  rel.tol = tol, abs.tol = 0, subdivisions = subdivisions)$value, numeric(1))
+              return(sum(pieces))
             }
 
             # Define integrand
             integrand <- function(s) {
-              phi_val <- phi(s, rambda_component, mu, beta)
-              dens_val <- dresidual_fn(phi_val, param = default_param)
+              phi_val <- mu * s + integrate_exp_kernel(rambda_component, beta, s)
+              dens_val <- if (is.null(object@dresidual)) stats::dexp(phi_val) else
+                residual_density(object@dresidual, phi_val)
               s * dens_val * psi(s, rambda_component, mu, beta)
             }
 

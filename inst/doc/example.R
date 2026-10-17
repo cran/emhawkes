@@ -3,6 +3,7 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
+knitr::opts_chunk$set(eval = requireNamespace("maxLik", quietly = TRUE))
 
 
 ## -----------------------------------------------------------------------------
@@ -19,11 +20,11 @@ res1 <- hsim(hspec1, size = 1000)
 summary(res1)
 
 ## -----------------------------------------------------------------------------
-# first and third columns are the same
+# The first and third columns are equal.
 cbind(res1$lambda[1:5], res1$lambda_component[1:5], mu1 + res1$lambda_component[1:5])
 
 ## -----------------------------------------------------------------------------
-# second and third columns are the same
+# The second and third columns are equal except in the initial row.
 cbind(res1$lambda[1:5], res1$rambda[1:5], res1$lambda[1:5] + alpha1)
 
 ## -----------------------------------------------------------------------------
@@ -35,12 +36,27 @@ mu1 + (res1$rambda[1:5] - mu1) * exp(-beta1 * res1$inter_arrival[2:6])
 logLik(hspec1, inter_arrival = res1$inter_arrival)
 
 ## ----warning=FALSE------------------------------------------------------------
-# initial value for numerical optimization
+# Initial parameter values for numerical optimization.
 mu0 <- 0.5; alpha0 <- 1.0; beta0 <- 1.8
 hspec0 <- new("hspec", mu = mu0, alpha = alpha0, beta = beta0)
-# the intial values are provided through hspec
+# Supply the initial values through hspec0.
 mle <- hfit(hspec0, inter_arrival = res1$inter_arrival)
 summary(mle)
+
+## ----fit-reconstruction, message=FALSE----------------------------------------
+estimated <- fitted_hspec(mle)
+initial <- fit_initial_state(mle)
+inferred <- do.call(logLik, c(list(object = estimated,
+  inter_arrival = res1$inter_arrival, infer = TRUE), initial))
+c(fitted = as.numeric(logLik(mle)), restored = inferred$loglikelihood)
+head(inferred$lambda)
+head(inferred$res_process1)
+
+## ----residual-check, fig.height=4, fig.width=4--------------------------------
+p <- ppoints(100)
+q <- quantile(inferred$res_process1, probs = p)
+plot(qexp(p), q, xlab = "Theoretical quantiles", ylab = "Sample quantiles")
+abline(0, 1, col = "blue", lty = 2)
 
 ## -----------------------------------------------------------------------------
 mu2 <- matrix(c(0.2), nrow = 2)
@@ -55,7 +71,7 @@ res2 <- hsim(hspec2,  size=1000)
 summary(res2)
 
 ## -----------------------------------------------------------------------------
-# Under bi-variate model, there are two types, 1 or 2.
+# A bivariate model has two event types: 1 and 2.
 res2$type[1:10]
 
 ## -----------------------------------------------------------------------------
@@ -88,4 +104,23 @@ coef(mle)
 
 ## -----------------------------------------------------------------------------
 miscTools::stdEr(mle)
+
+## ----shared-matrices----------------------------------------------------------
+estimated2 <- fitted_hspec(mle)
+estimated2@alpha
+estimated2@beta
+
+## ----eval=FALSE---------------------------------------------------------------
+# inter_arrival <- c(0, diff(c(0, event_times)))
+# type <- c(0, event_types)
+# mark <- c(0, event_marks)
+
+## ----stats-optimizer, eval=TRUE-----------------------------------------------
+library(emhawkes)
+poisson <- new("hspec", mu = 0.5, alpha = 0, beta = 1)
+fit_stats <- hfit(poisson, c(0, 0.2, 0.3, 0.5), optimizer = "stats",
+                  lambda_component0 = 0, fixed = c(FALSE, TRUE, TRUE),
+                  control = list(maxit = 500, reltol = 1e-12))
+summary(fit_stats)
+fit_diagnostics(fit_stats)$computation$optimizer
 

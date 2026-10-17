@@ -12,9 +12,9 @@
 
 <meta name="author" content="Kyungsub Lee" />
 
-<meta name="date" content="2025-08-26" />
+<meta name="date" content="2026-10-17" />
 
-<title>Example : emhawkes package</title>
+<title>Get started with emhawkes</title>
 
 <script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
 // be compatible with the behavior of Pandoc < 2.8).
@@ -50,8 +50,9 @@ overflow: visible;
 }
 </style>
 <style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
 pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
 pre > code.sourceCode > span:empty { height: 1.2em; }
 .sourceCode { overflow: visible; }
 code.sourceCode > span { color: inherit; text-decoration: inherit; }
@@ -62,7 +63,7 @@ div.sourceCode { overflow: auto; }
 }
 @media print {
 pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
 }
 pre.numberSource code
 { counter-reset: source-line 0; }
@@ -338,28 +339,30 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 
 
-<h1 class="title toc-ignore">Example : emhawkes package</h1>
+<h1 class="title toc-ignore">Get started with emhawkes</h1>
 <h4 class="author">Kyungsub Lee</h4>
-<h4 class="date">2025-08-26</h4>
+<h4 class="date">2026-10-17</h4>
 
 
 
+<p>This vignette introduces model specification, simulation, estimation
+and a first residual check. It is included in the R package and also
+published on the website. For more models, see <a href="https://ksublee.github.io/emhawkes/articles/extended_example.html">Extended
+examples</a>.</p>
 <div id="basic-hawkes-model" class="section level2">
 <h2>Basic Hawkes model</h2>
 <div id="univariate-hawkes-process" class="section level3">
 <h3>Univariate Hawkes process</h3>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(emhawkes)</span></code></pre></div>
-<p>This subsection outlines the steps for constructing, running
-simulations, and estimating a univariate Hawkes model. To begin, create
-an <code>hspec</code> object, which defines the Hawkes model. The S4
-class <code>hspec</code> contains slots for the model parameters:
+<p>This section shows how to specify, simulate, and fit a univariate
+Hawkes model. First, create an <code>hspec</code> object to define the
+model. The S4 class <code>hspec</code> includes slots such as
 <code>mu</code>, <code>alpha</code>, <code>beta</code>,
 <code>dimens</code>, <code>rmark</code>, and <code>impact</code>.</p>
-<p>In a univariate model, the basic parameters of the
-model—<code>mu</code>, <code>alpha</code>, and <code>beta</code>—can be
-given as numeric values. If numeric values are provided, they will be
-converted to matrices. Below is an example of a univariate Hawkes model
-without a mark.</p>
+<p>In a univariate model, <code>mu</code>, <code>alpha</code>, and
+<code>beta</code> can be supplied as numeric values, which are converted
+to matrices. The following example defines an unmarked univariate Hawkes
+model.</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>mu1 <span class="ot">&lt;-</span> <span class="fl">0.3</span>; alpha1 <span class="ot">&lt;-</span> <span class="fl">1.2</span>; beta1 <span class="ot">&lt;-</span> <span class="fl">1.5</span></span>
 <span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>hspec1 <span class="ot">&lt;-</span> <span class="fu">new</span>(<span class="st">&quot;hspec&quot;</span>, <span class="at">mu =</span> mu1, <span class="at">alpha =</span> alpha1, <span class="at">beta =</span> beta1)</span>
 <span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="fu">show</span>(hspec1)</span>
@@ -376,144 +379,192 @@ without a mark.</p>
 <span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a><span class="co">#&gt; Slot beta: </span></span>
 <span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a><span class="co">#&gt;      [,1]</span></span>
 <span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a><span class="co">#&gt; [1,]  1.5</span></span></code></pre></div>
-<p>The function <code>hsim</code> implements simulation where the input
-arguments are <code>hspec</code>, <code>size</code>, and the initial
-values of the intensity component process,
-<code>lambda_component0</code>, and the initial values of the Hawkes
-processes, <code>N0</code>. More precisely, the intensity process of the
-basic univariate Hawkes model is represented by</p>
+<p>The <code>hsim</code> function simulates a path from an
+<code>hspec</code> object. The <code>size</code> argument specifies the
+number of rows, including the initial state. The optional arguments
+<code>lambda_component0</code> and <code>N0</code> specify the initial
+intensity components and event counts, respectively. The intensity of
+the basic univariate Hawkes model is</p>
 <p><span class="math display">\[
 \lambda(t) = \mu + \int_{-\infty}^t \alpha e^{-\beta (t-s)} d N(s) = \mu
 + \lambda_c(0) e^{-\beta t} + \int_0^t \alpha e^{-\beta (t-s)} d N(s)
 \]</span></p>
-<p>where the <code>lambda_component0</code> denotes</p>
+<p>where <code>lambda_component0</code> denotes</p>
 <p><span class="math display">\[
 \lambda_c(0) = \int_{-\infty}^0 \alpha e^{\beta s} d N(s).
 \]</span></p>
-<p>If <code>lambda_component0</code> is not provided, the internally
-determined initial values for the intensity process are used. If
-<code>size</code> is sufficiently large, the exact value of
-<code>lambda_component0</code> may not be important. The default initial
-value of the counting process, <code>N0</code>, is zero.</p>
+<p>The default <code>lambda_component0 = &quot;auto&quot;</code> uses
+unconditional component means for supported stable constant numeric
+linear models, and zero components otherwise. The selected rule is
+reported in a message; zero initialization recommends supplying
+components explicitly. Use <code>&quot;mean&quot;</code> to require supported
+finite means, <code>&quot;zero&quot;</code> to start from baseline intensities, or
+a scalar/matrix to specify the components directly. Mean initialization
+is deterministic and does not sample a stationary initial state. For a
+sufficiently long simulation of a stable model, the effect of the
+initial intensity diminishes over time. The default initial value of the
+counting process, <code>N0</code>, is zero.</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1107</span>)</span>
 <span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>res1 <span class="ot">&lt;-</span> <span class="fu">hsim</span>(hspec1, <span class="at">size =</span> <span class="dv">1000</span>)</span>
-<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="fu">summary</span>(res1)</span>
-<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="co">#&gt; -------------------------------------------------------</span></span>
-<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="co">#&gt; Simulation result of exponential (marked) Hawkes model.</span></span>
-<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a><span class="co">#&gt; Realized path :</span></span>
-<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a><span class="co">#&gt;        arrival N1 mark lambda1</span></span>
-<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a><span class="co">#&gt;  [1,]  0.00000  0    0 0.90000</span></span>
-<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a><span class="co">#&gt;  [2,]  0.97794  1    1 0.43838</span></span>
-<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a><span class="co">#&gt;  [3,]  1.09001  2    1 1.43128</span></span>
-<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a><span class="co">#&gt;  [4,]  1.28999  3    1 2.02711</span></span>
-<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a><span class="co">#&gt;  [5,]  1.53225  4    1 2.33527</span></span>
-<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a><span class="co">#&gt;  [6,]  1.65001  5    1 3.01139</span></span>
-<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a><span class="co">#&gt;  [7,]  2.51807  6    1 1.36377</span></span>
-<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a><span class="co">#&gt;  [8,]  2.81710  7    1 1.74553</span></span>
-<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a><span class="co">#&gt;  [9,]  2.87547  8    1 2.72378</span></span>
-<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a><span class="co">#&gt; [10,]  3.16415  9    1 2.65016</span></span>
-<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a><span class="co">#&gt; [11,]  3.51378 10    1 2.40131</span></span>
-<span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a><span class="co">#&gt; [12,]  4.22355 11    1 1.43843</span></span>
-<span id="cb3-20"><a href="#cb3-20" tabindex="-1"></a><span class="co">#&gt; [13,] 16.96752 12    1 0.30000</span></span>
-<span id="cb3-21"><a href="#cb3-21" tabindex="-1"></a><span class="co">#&gt; [14,] 17.71654 13    1 0.69015</span></span>
-<span id="cb3-22"><a href="#cb3-22" tabindex="-1"></a><span class="co">#&gt; [15,] 19.10293 14    1 0.49874</span></span>
-<span id="cb3-23"><a href="#cb3-23" tabindex="-1"></a><span class="co">#&gt; [16,] 24.06354 15    1 0.30082</span></span>
-<span id="cb3-24"><a href="#cb3-24" tabindex="-1"></a><span class="co">#&gt; [17,] 24.09256 16    1 1.44967</span></span>
-<span id="cb3-25"><a href="#cb3-25" tabindex="-1"></a><span class="co">#&gt; [18,] 28.40173 17    1 0.30366</span></span>
-<span id="cb3-26"><a href="#cb3-26" tabindex="-1"></a><span class="co">#&gt; [19,] 28.53743 18    1 1.28198</span></span>
-<span id="cb3-27"><a href="#cb3-27" tabindex="-1"></a><span class="co">#&gt; [20,] 28.56702 19    1 2.38725</span></span>
-<span id="cb3-28"><a href="#cb3-28" tabindex="-1"></a><span class="co">#&gt; ... with 980 more rows </span></span>
-<span id="cb3-29"><a href="#cb3-29" tabindex="-1"></a><span class="co">#&gt; -------------------------------------------------------</span></span></code></pre></div>
-<p>The results of <code>hsim</code> is an S3 class <code>hreal</code>,
-which consists of <code>hspec</code>, <code>inter_arrival</code>,
-<code>arrival</code>, <code>type</code>, <code>mark</code>,
-<code>N</code>, <code>Nc</code>, <code>lambda</code>,
-<code>lambda_component</code>, <code>rambda</code>,
-<code>rambda_component</code>.</p>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="co">#&gt; Initial intensity components: auto -&gt; mean (unconditional component means).</span></span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="fu">summary</span>(res1)</span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="co">#&gt; -------------------------------------------------------</span></span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a><span class="co">#&gt; Simulation result of exponential (marked) Hawkes model.</span></span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a><span class="co">#&gt; Realized path :</span></span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a><span class="co">#&gt;        arrival N1 mark lambda1</span></span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a><span class="co">#&gt;  [1,]  0.00000  0    0 1.50000</span></span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a><span class="co">#&gt;  [2,]  0.68807  1    1 0.72751</span></span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a><span class="co">#&gt;  [3,]  0.80014  2    1 1.67567</span></span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a><span class="co">#&gt;  [4,]  0.97835  3    1 2.27150</span></span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a><span class="co">#&gt;  [5,]  1.19847  4    1 2.57966</span></span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a><span class="co">#&gt;  [6,]  1.30725  5    1 3.25578</span></span>
+<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a><span class="co">#&gt;  [7,]  2.17530  6    1 1.43023</span></span>
+<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a><span class="co">#&gt;  [8,]  2.47434  7    1 1.78797</span></span>
+<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a><span class="co">#&gt;  [9,]  2.53174  8    1 2.76622</span></span>
+<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a><span class="co">#&gt; [10,]  2.81626  9    1 2.69260</span></span>
+<span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a><span class="co">#&gt; [11,]  3.16047 10    1 2.44375</span></span>
+<span id="cb3-20"><a href="#cb3-20" tabindex="-1"></a><span class="co">#&gt; [12,]  3.85436 11    1 1.48087</span></span>
+<span id="cb3-21"><a href="#cb3-21" tabindex="-1"></a><span class="co">#&gt; [13,] 16.59833 12    1 0.30000</span></span>
+<span id="cb3-22"><a href="#cb3-22" tabindex="-1"></a><span class="co">#&gt; [14,] 17.34735 13    1 0.69015</span></span>
+<span id="cb3-23"><a href="#cb3-23" tabindex="-1"></a><span class="co">#&gt; [15,] 18.73374 14    1 0.49874</span></span>
+<span id="cb3-24"><a href="#cb3-24" tabindex="-1"></a><span class="co">#&gt; [16,] 23.69435 15    1 0.30082</span></span>
+<span id="cb3-25"><a href="#cb3-25" tabindex="-1"></a><span class="co">#&gt; [17,] 23.72337 16    1 1.44967</span></span>
+<span id="cb3-26"><a href="#cb3-26" tabindex="-1"></a><span class="co">#&gt; [18,] 28.03254 17    1 0.30366</span></span>
+<span id="cb3-27"><a href="#cb3-27" tabindex="-1"></a><span class="co">#&gt; [19,] 28.16824 18    1 1.28198</span></span>
+<span id="cb3-28"><a href="#cb3-28" tabindex="-1"></a><span class="co">#&gt; [20,] 28.19783 19    1 2.38725</span></span>
+<span id="cb3-29"><a href="#cb3-29" tabindex="-1"></a><span class="co">#&gt; ... with 980 more rows </span></span>
+<span id="cb3-30"><a href="#cb3-30" tabindex="-1"></a><span class="co">#&gt; -------------------------------------------------------</span></span></code></pre></div>
+<p>The <code>hsim</code> function returns an S3 object of class
+<code>hreal</code> with the following components.</p>
 <ul>
 <li><p><code>hspec</code> is the model specification.</p></li>
-<li><p><code>inter_arrival</code> is the inter-arrival time of every
-event.</p></li>
+<li><p><code>inter_arrival</code> contains the times between consecutive
+events.</p></li>
 <li><p><code>arrival</code> is the cumulative sum of
 <code>inter_arrival</code>.</p></li>
-<li><p><code>type</code> is the type of events, i.e., <span class="math inline">\(i\)</span> for <span class="math inline">\(N_i\)</span>, and is used for a multivariate
-model.</p></li>
-<li><p><code>mark</code> is a numeric vector that represents additional
-information for the event.</p></li>
-<li><p><code>lambda</code> represents <span class="math inline">\(\lambda\)</span>, which is the left continuous and
-right limit version.</p></li>
-<li><p>The right continuous version of intensity is
-<code>rambda</code>.</p></li>
-<li><p><code>lambda_component</code> represents <span class="math inline">\(\lambda_{ij}\)</span>, and
-<code>rambda_component</code> is the right continuous version.</p></li>
+<li><p><code>type</code> identifies the counting process associated with
+each event: type <span class="math inline">\(i\)</span> corresponds to
+<span class="math inline">\(N_i\)</span>.</p></li>
+<li><p><code>mark</code> contains the mark associated with each
+event.</p></li>
+<li><p><code>N</code> contains the cumulative event counts for each
+type.</p></li>
+<li><p><code>Nc</code> contains the cumulative marks for each
+type.</p></li>
+<li><p><code>lambda</code> contains the intensity immediately before
+each event.</p></li>
+<li><p><code>rambda</code> contains the intensity immediately after each
+event.</p></li>
+<li><p><code>lambda_component</code> and <code>rambda_component</code>
+contain the intensity components <span class="math inline">\(\lambda_{ij}\)</span> immediately before and after
+each event, respectively.</p></li>
 </ul>
-<p><code>inter_arrival</code>, <code>type</code>, <code>mark</code>,
-<code>N</code>, and <code>Nc</code> start at zero. Using the
-<code>summary()</code> function, one can print the first 20 elements of
-<code>arrival</code>, <code>N</code>, and <code>lambda</code>. The
-<code>print()</code> function can also be used.</p>
-<p>By definition, we have
+<p>With the default initial values, <code>inter_arrival</code>,
+<code>type</code>, <code>mark</code>, <code>N</code>, and
+<code>Nc</code> begin with zero. The <code>summary()</code> function
+displays the first 20 rows of the realized path by default. The
+<code>print()</code> function also displays the model specification and
+intensity components.</p>
+<p>In this univariate model,
 <code>lambda == mu + lambda_component</code>.</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="co"># first and third columns are the same</span></span>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="co"># The first and third columns are equal.</span></span>
 <span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="fu">cbind</span>(res1<span class="sc">$</span>lambda[<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>], res1<span class="sc">$</span>lambda_component[<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>], mu1 <span class="sc">+</span> res1<span class="sc">$</span>lambda_component[<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>])</span>
-<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="co">#&gt;          [,1]     [,2]     [,3]</span></span>
-<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="co">#&gt; [1,] 0.900000 0.600000 0.900000</span></span>
-<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="co">#&gt; [2,] 0.438383 0.138383 0.438383</span></span>
-<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="co">#&gt; [3,] 1.431282 1.131282 1.431282</span></span>
-<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="co">#&gt; [4,] 2.027111 1.727111 2.027111</span></span>
-<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="co">#&gt; [5,] 2.335269 2.035269 2.335269</span></span></code></pre></div>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="co">#&gt;           [,1]      [,2]      [,3]</span></span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="co">#&gt; [1,] 1.5000000 1.2000000 1.5000000</span></span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="co">#&gt; [2,] 0.7275103 0.4275103 0.7275103</span></span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="co">#&gt; [3,] 1.6756694 1.3756694 1.6756694</span></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="co">#&gt; [4,] 2.2714992 1.9714992 2.2714992</span></span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="co">#&gt; [5,] 2.5796567 2.2796567 2.5796567</span></span></code></pre></div>
 <p>For all rows except the first, <code>rambda</code> equals
 <code>lambda + alpha</code> in this model.</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="co"># second and third columns are the same</span></span>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="co"># The second and third columns are equal except in the initial row.</span></span>
 <span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="fu">cbind</span>(res1<span class="sc">$</span>lambda[<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>], res1<span class="sc">$</span>rambda[<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>], res1<span class="sc">$</span>lambda[<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>] <span class="sc">+</span> alpha1)</span>
-<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="co">#&gt;          [,1]     [,2]     [,3]</span></span>
-<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="co">#&gt; [1,] 0.900000 0.900000 2.100000</span></span>
-<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="co">#&gt; [2,] 0.438383 1.638383 1.638383</span></span>
-<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="co">#&gt; [3,] 1.431282 2.631282 2.631282</span></span>
-<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a><span class="co">#&gt; [4,] 2.027111 3.227111 3.227111</span></span>
-<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a><span class="co">#&gt; [5,] 2.335269 3.535269 3.535269</span></span></code></pre></div>
-<p>Additionally, verify that the exponential decay is accurately
-represented in the model.</p>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="co">#&gt;           [,1]     [,2]     [,3]</span></span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="co">#&gt; [1,] 1.5000000 1.500000 2.700000</span></span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="co">#&gt; [2,] 0.7275103 1.927510 1.927510</span></span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="co">#&gt; [3,] 1.6756694 2.875669 2.875669</span></span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a><span class="co">#&gt; [4,] 2.2714992 3.471499 3.471499</span></span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a><span class="co">#&gt; [5,] 2.5796567 3.779657 3.779657</span></span></code></pre></div>
+<p>The following calculation verifies the exponential decay between
+events.</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="co"># By definition, the following two are equal:</span></span>
 <span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>res1<span class="sc">$</span>lambda[<span class="dv">2</span><span class="sc">:</span><span class="dv">6</span>]</span>
-<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="co">#&gt; [1] 0.438383 1.431282 2.027111 2.335269 3.011391</span></span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="co">#&gt; [1] 0.7275103 1.6756694 2.2714992 2.5796567 3.2557793</span></span>
 <span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>mu1 <span class="sc">+</span> (res1<span class="sc">$</span>rambda[<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>] <span class="sc">-</span> mu1) <span class="sc">*</span> <span class="fu">exp</span>(<span class="sc">-</span>beta1 <span class="sc">*</span> res1<span class="sc">$</span>inter_arrival[<span class="dv">2</span><span class="sc">:</span><span class="dv">6</span>])</span>
-<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="co">#&gt; [1] 0.438383 1.431282 2.027111 2.335269 3.011391</span></span></code></pre></div>
-<p>The log-likelihood function is calculated using the
-<code>logLik</code> method. In this context, the inter-arrival times and
-<code>hspec</code> are provided as inputs to the function.</p>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="co">#&gt; [1] 0.7275103 1.6756694 2.2714992 2.5796567 3.2557793</span></span></code></pre></div>
+<p>Use <code>logLik</code> to evaluate the log-likelihood from the model
+specification and observed inter-arrival times.</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">logLik</span>(hspec1, <span class="at">inter_arrival =</span> res1<span class="sc">$</span>inter_arrival)</span>
-<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="co">#&gt; The initial values for intensity processes are not provided. Internally determined initial values are used.</span></span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="co">#&gt; Initial intensity components: auto -&gt; mean (unconditional component means).</span></span>
 <span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="co">#&gt; loglikelihood </span></span>
-<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="co">#&gt;     -214.2385</span></span></code></pre></div>
-<p>The likelihood estimation is performed using the <code>hfit</code>
-function. The specification of the initial parameter values,
-<code>hspec0</code>, is required. Note that only
-<code>inter_arrival</code> is needed for this univariate model. For more
-accurate simulation, it is recommended to specify <code>lambda0</code>,
-the initial value of the lambda component. If <code>lambda0</code> is
-not provided, the function uses internally determined initial values. By
-default, the BFGS method is employed for numerical optimization.</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="co"># initial value for numerical optimization</span></span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="co">#&gt;     -213.4226</span></span></code></pre></div>
+<p>Use <code>hfit</code> for maximum likelihood estimation. The
+<code>hspec0</code> object supplies the initial parameter values for
+optimization. For this univariate model, <code>inter_arrival</code> is
+the only required data argument. If the initial intensity component is
+known, pass it as <code>lambda_component0</code>; otherwise, the
+function determines it internally. The default optimization method is
+BFGS.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="co"># Initial parameter values for numerical optimization.</span></span>
 <span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>mu0 <span class="ot">&lt;-</span> <span class="fl">0.5</span>; alpha0 <span class="ot">&lt;-</span> <span class="fl">1.0</span>; beta0 <span class="ot">&lt;-</span> <span class="fl">1.8</span></span>
 <span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>hspec0 <span class="ot">&lt;-</span> <span class="fu">new</span>(<span class="st">&quot;hspec&quot;</span>, <span class="at">mu =</span> mu0, <span class="at">alpha =</span> alpha0, <span class="at">beta =</span> beta0)</span>
-<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a><span class="co"># the intial values are provided through hspec</span></span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a><span class="co"># Supply the initial values through hspec0.</span></span>
 <span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>mle <span class="ot">&lt;-</span> <span class="fu">hfit</span>(hspec0, <span class="at">inter_arrival =</span> res1<span class="sc">$</span>inter_arrival)</span>
-<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="fu">summary</span>(mle)</span>
-<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a><span class="co">#&gt; --------------------------------------------</span></span>
-<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a><span class="co">#&gt; Maximum Likelihood estimation</span></span>
-<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="co">#&gt; BFGS maximization, 24 iterations</span></span>
-<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a><span class="co">#&gt; Return code 0: successful convergence </span></span>
-<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a><span class="co">#&gt; Log-Likelihood: -213.4658 </span></span>
-<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a><span class="co">#&gt; 3  free parameters</span></span>
-<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a><span class="co">#&gt; Estimates:</span></span>
-<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a><span class="co">#&gt;        Estimate Std. error t value Pr(&gt; t)    </span></span>
-<span id="cb8-15"><a href="#cb8-15" tabindex="-1"></a><span class="co">#&gt; mu1     0.33641    0.03475   9.682  &lt;2e-16 ***</span></span>
-<span id="cb8-16"><a href="#cb8-16" tabindex="-1"></a><span class="co">#&gt; alpha1  1.16654    0.09608  12.141  &lt;2e-16 ***</span></span>
-<span id="cb8-17"><a href="#cb8-17" tabindex="-1"></a><span class="co">#&gt; beta1   1.52270    0.12468  12.213  &lt;2e-16 ***</span></span>
-<span id="cb8-18"><a href="#cb8-18" tabindex="-1"></a><span class="co">#&gt; ---</span></span>
-<span id="cb8-19"><a href="#cb8-19" tabindex="-1"></a><span class="co">#&gt; Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</span></span>
-<span id="cb8-20"><a href="#cb8-20" tabindex="-1"></a><span class="co">#&gt; --------------------------------------------</span></span></code></pre></div>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="co">#&gt; Initial intensity components: auto -&gt; mean (unconditional component means).</span></span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a><span class="fu">summary</span>(mle)</span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a><span class="co">#&gt; --------------------------------------------</span></span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="co">#&gt; Maximum Likelihood estimation</span></span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a><span class="co">#&gt; BFGS maximization, 24 iterations</span></span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a><span class="co">#&gt; Return code 0: successful convergence </span></span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a><span class="co">#&gt; Log-Likelihood: -212.6902 </span></span>
+<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a><span class="co">#&gt; 3  free parameters</span></span>
+<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a><span class="co">#&gt; Estimates:</span></span>
+<span id="cb8-15"><a href="#cb8-15" tabindex="-1"></a><span class="co">#&gt;        Estimate Std. error t value Pr(&gt; t)    </span></span>
+<span id="cb8-16"><a href="#cb8-16" tabindex="-1"></a><span class="co">#&gt; mu1     0.33554    0.03494   9.604  &lt;2e-16 ***</span></span>
+<span id="cb8-17"><a href="#cb8-17" tabindex="-1"></a><span class="co">#&gt; alpha1  1.16515    0.09938  11.725  &lt;2e-16 ***</span></span>
+<span id="cb8-18"><a href="#cb8-18" tabindex="-1"></a><span class="co">#&gt; beta1   1.51820    0.12947  11.727  &lt;2e-16 ***</span></span>
+<span id="cb8-19"><a href="#cb8-19" tabindex="-1"></a><span class="co">#&gt; ---</span></span>
+<span id="cb8-20"><a href="#cb8-20" tabindex="-1"></a><span class="co">#&gt; Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</span></span>
+<span id="cb8-21"><a href="#cb8-21" tabindex="-1"></a><span class="co">#&gt; --------------------------------------------</span></span></code></pre></div>
+<p>Use <code>fitted_hspec()</code> to reconstruct the estimated model
+and <code>fit_initial_state()</code> to reuse its initial-state
+settings. The fit remains a <code>maxLik</code> object.
+<code>coef()</code>, <code>summary()</code>, and <code>vcov()</code>
+provide the usual estimation results.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>estimated <span class="ot">&lt;-</span> <span class="fu">fitted_hspec</span>(mle)</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>initial <span class="ot">&lt;-</span> <span class="fu">fit_initial_state</span>(mle)</span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>inferred <span class="ot">&lt;-</span> <span class="fu">do.call</span>(logLik, <span class="fu">c</span>(<span class="fu">list</span>(<span class="at">object =</span> estimated,</span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>  <span class="at">inter_arrival =</span> res1<span class="sc">$</span>inter_arrival, <span class="at">infer =</span> <span class="cn">TRUE</span>), initial))</span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a><span class="fu">c</span>(<span class="at">fitted =</span> <span class="fu">as.numeric</span>(<span class="fu">logLik</span>(mle)), <span class="at">restored =</span> inferred<span class="sc">$</span>loglikelihood)</span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="co">#&gt;    fitted  restored </span></span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a><span class="co">#&gt; -212.6902 -212.6902</span></span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a><span class="fu">head</span>(inferred<span class="sc">$</span>lambda)</span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a><span class="co">#&gt;        lambda1</span></span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a><span class="co">#&gt; [1,] 1.4429344</span></span>
+<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a><span class="co">#&gt; [2,] 0.7251523</span></span>
+<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a><span class="co">#&gt; [3,] 1.6470433</span></span>
+<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a><span class="co">#&gt; [4,] 2.2251136</span></span>
+<span id="cb9-14"><a href="#cb9-14" tabindex="-1"></a><span class="co">#&gt; [5,] 2.5224834</span></span>
+<span id="cb9-15"><a href="#cb9-15" tabindex="-1"></a><span class="co">#&gt; [6,] 3.1773322</span></span>
+<span id="cb9-16"><a href="#cb9-16" tabindex="-1"></a><span class="fu">head</span>(inferred<span class="sc">$</span>res_process1)</span>
+<span id="cb9-17"><a href="#cb9-17" tabindex="-1"></a><span class="co">#&gt; [1] 0.1978360 0.4464937 0.6454466 0.3726250 2.2239999 0.6382222</span></span></code></pre></div>
+</div>
+<div id="a-first-residual-check" class="section level3">
+<h3>A first residual check</h3>
+<p>For an ordinary Hawkes model, integrated-intensity residuals should
+follow an exponential distribution with rate 1 when the model is
+adequate. Compare their quantiles with the reference distribution.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>p <span class="ot">&lt;-</span> <span class="fu">ppoints</span>(<span class="dv">100</span>)</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>q <span class="ot">&lt;-</span> <span class="fu">quantile</span>(inferred<span class="sc">$</span>res_process1, <span class="at">probs =</span> p)</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a><span class="fu">plot</span>(<span class="fu">qexp</span>(p), q, <span class="at">xlab =</span> <span class="st">&quot;Theoretical quantiles&quot;</span>, <span class="at">ylab =</span> <span class="st">&quot;Sample quantiles&quot;</span>)</span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a><span class="fu">abline</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="at">col =</span> <span class="st">&quot;blue&quot;</span>, <span class="at">lty =</span> <span class="dv">2</span>)</span></code></pre></div>
+<p><img role="img" src="data:image/png;base64,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" /><!-- --></p>
+<p>By default, <code>hfit()</code> uses the final Hessian and standard
+errors from <code>maxLik</code>. For saved fits, new simulations, fuller
+residual diagnostics and optional <code>final_hessian = &quot;stable&quot;</code>
+checks, see <a href="https://ksublee.github.io/emhawkes/articles/fitting-and-inference.html">Fitting
+and inference</a>. A stable Hessian alone does not establish reliable
+confidence intervals.</p>
 </div>
 <div id="bivariate-hawkes-model" class="section level3">
 <h3>Bivariate Hawkes model</h3>
@@ -527,10 +578,8 @@ d N_1(s) + \int_{-\infty}^t \alpha_{12} e^{-\beta_{12}(t-s)} d N_2(s),
 \lambda_2(t) = \mu_2 + \int_{-\infty}^t \alpha_{21} e^{-\beta_{21}(t-s)}
 d N_1(s) + \int_{-\infty}^t \alpha_{22} e^{-\beta_{22}(t-s)} d N_2(s).
 \]</span></p>
-<p>In a bivariate model, the parameters within the slots of
-<code>hspec</code> are matrices. Specifically, <code>mu</code> is a
-2-by-1 matrix, while <code>alpha</code> and <code>beta</code> are 2-by-2
-matrices.</p>
+<p>For this bivariate model, <code>mu</code> is a 2-by-1 matrix, and
+<code>alpha</code> and <code>beta</code> are 2-by-2 matrices.</p>
 <p><span class="math display">\[
 \mu = \begin{bmatrix} \mu_1 \\ \mu_2 \end{bmatrix}, \quad
 \alpha = \begin{bmatrix} \alpha_{11} &amp; \alpha_{12} \\ \alpha_{21}
@@ -539,10 +588,9 @@ matrices.</p>
 \begin{bmatrix} \beta_{11} &amp; \beta_{12} \\ \beta_{21} &amp;
 \beta_{22} \end{bmatrix}
 \]</span></p>
-<p><code>rmark</code> is a random number generating function for marks
-and is not used in non-mark models. <code>lambda_component0</code> is a
-2-by-2 matrix that represents the initial values of
-<code>lambda_component</code>, which includes the set of values
+<p><code>rmark</code> generates marks during simulation and can be
+omitted for unmarked models. The 2-by-2 matrix
+<code>lambda_component0</code> specifies the initial values of
 <code>lambda11</code>, <code>lambda12</code>, <code>lambda21</code>, and
 <code>lambda22</code>. The intensity processes are represented by</p>
 <p><span class="math display">\[ \lambda_1(t) = \mu_1 + \lambda_{11}(t)
@@ -550,142 +598,246 @@ and is not used in non-mark models. <code>lambda_component0</code> is a
 <p><span class="math display">\[ \lambda_2(t) = \mu_2 + \lambda_{21}(t)
 + \lambda_{22}(t). \]</span></p>
 <p>The terms <span class="math inline">\(\lambda_{ij}\)</span> are
-referred to as lambda components, and <code>lambda0</code> represents
-$_{ij}(0)<code>.  The parameter</code>lambda_component0` can be omitted
-in this model, in which case internally determined initial values will
-be used.</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>mu2 <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="fl">0.2</span>), <span class="at">nrow =</span> <span class="dv">2</span>)</span>
-<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>alpha2 <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="fl">0.5</span>, <span class="fl">0.9</span>, <span class="fl">0.9</span>, <span class="fl">0.5</span>), <span class="at">nrow =</span> <span class="dv">2</span>, <span class="at">byrow =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>beta2 <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="fl">2.25</span>, <span class="fl">2.25</span>, <span class="fl">2.25</span>, <span class="fl">2.25</span>), <span class="at">nrow =</span> <span class="dv">2</span>, <span class="at">byrow =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>hspec2 <span class="ot">&lt;-</span> <span class="fu">new</span>(<span class="st">&quot;hspec&quot;</span>, <span class="at">mu=</span>mu2, <span class="at">alpha=</span>alpha2, <span class="at">beta=</span>beta2)</span>
-<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a><span class="fu">print</span>(hspec2)</span>
-<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="co">#&gt; An object of class &quot;hspec&quot; of 2-dimensional Hawkes process</span></span>
-<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a><span class="co">#&gt; Slot mu: </span></span>
-<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a><span class="co">#&gt;      [,1]</span></span>
-<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a><span class="co">#&gt; [1,]  0.2</span></span>
-<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a><span class="co">#&gt; [2,]  0.2</span></span>
-<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a><span class="co">#&gt; Slot alpha: </span></span>
-<span id="cb9-14"><a href="#cb9-14" tabindex="-1"></a><span class="co">#&gt;      [,1] [,2]</span></span>
-<span id="cb9-15"><a href="#cb9-15" tabindex="-1"></a><span class="co">#&gt; [1,]  0.5  0.9</span></span>
-<span id="cb9-16"><a href="#cb9-16" tabindex="-1"></a><span class="co">#&gt; [2,]  0.9  0.5</span></span>
-<span id="cb9-17"><a href="#cb9-17" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb9-18"><a href="#cb9-18" tabindex="-1"></a><span class="co">#&gt; Slot beta: </span></span>
-<span id="cb9-19"><a href="#cb9-19" tabindex="-1"></a><span class="co">#&gt;      [,1] [,2]</span></span>
-<span id="cb9-20"><a href="#cb9-20" tabindex="-1"></a><span class="co">#&gt; [1,] 2.25 2.25</span></span>
-<span id="cb9-21"><a href="#cb9-21" tabindex="-1"></a><span class="co">#&gt; [2,] 2.25 2.25</span></span></code></pre></div>
-<p>To perform a simulation, use the <code>hsim</code> function.</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1107</span>)</span>
-<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>res2 <span class="ot">&lt;-</span> <span class="fu">hsim</span>(hspec2,  <span class="at">size=</span><span class="dv">1000</span>)</span>
-<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a><span class="fu">summary</span>(res2)</span>
-<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a><span class="co">#&gt; -------------------------------------------------------</span></span>
-<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a><span class="co">#&gt; Simulation result of exponential (marked) Hawkes model.</span></span>
-<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a><span class="co">#&gt; Realized path :</span></span>
-<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a><span class="co">#&gt;       arrival N1 N2 mark lambda1 lambda2</span></span>
-<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a><span class="co">#&gt;  [1,] 0.00000  0  0    0 0.52941 0.52941</span></span>
-<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a><span class="co">#&gt;  [2,] 0.57028  1  0    1 0.29130 0.29130</span></span>
-<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a><span class="co">#&gt;  [3,] 1.66175  1  1    1 0.25073 0.28505</span></span>
-<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a><span class="co">#&gt;  [4,] 2.17979  1  2    1 0.49638 0.38238</span></span>
-<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a><span class="co">#&gt;  [5,] 2.47685  1  3    1 0.81319 0.54975</span></span>
-<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a><span class="co">#&gt;  [6,] 2.64001  2  3    1 1.24825 0.78866</span></span>
-<span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a><span class="co">#&gt;  [7,] 2.70249  3  3    1 1.54519 1.49341</span></span>
-<span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a><span class="co">#&gt;  [8,] 2.94547  4  3    1 1.26810 1.46968</span></span>
-<span id="cb10-16"><a href="#cb10-16" tabindex="-1"></a><span class="co">#&gt;  [9,] 3.39313  4  4    1 0.77271 0.99242</span></span>
-<span id="cb10-17"><a href="#cb10-17" tabindex="-1"></a><span class="co">#&gt; [10,] 3.52533  4  5    1 1.29379 1.15989</span></span>
-<span id="cb10-18"><a href="#cb10-18" tabindex="-1"></a><span class="co">#&gt; [11,] 3.56971  5  5    1 2.00432 1.52115</span></span>
-<span id="cb10-19"><a href="#cb10-19" tabindex="-1"></a><span class="co">#&gt; [12,] 3.70761  5  6    1 1.88965 1.82866</span></span>
-<span id="cb10-20"><a href="#cb10-20" tabindex="-1"></a><span class="co">#&gt; [13,] 4.30122  5  7    1 0.88106 0.75983</span></span>
-<span id="cb10-21"><a href="#cb10-21" tabindex="-1"></a><span class="co">#&gt; [14,] 4.34337  6  7    1 1.63800 1.16393</span></span>
-<span id="cb10-22"><a href="#cb10-22" tabindex="-1"></a><span class="co">#&gt; [15,] 4.40222  7  7    1 1.89764 1.83275</span></span>
-<span id="cb10-23"><a href="#cb10-23" tabindex="-1"></a><span class="co">#&gt; [16,] 4.58943  8  7    1 1.64219 1.86211</span></span>
-<span id="cb10-24"><a href="#cb10-24" tabindex="-1"></a><span class="co">#&gt; [17,] 5.14665  9  7    1 0.75437 0.93131</span></span>
-<span id="cb10-25"><a href="#cb10-25" tabindex="-1"></a><span class="co">#&gt; [18,] 5.18186  9  8    1 1.17407 1.70707</span></span>
-<span id="cb10-26"><a href="#cb10-26" tabindex="-1"></a><span class="co">#&gt; [19,] 5.36167  9  9    1 1.45050 1.53925</span></span>
-<span id="cb10-27"><a href="#cb10-27" tabindex="-1"></a><span class="co">#&gt; [20,] 5.89118 10  9    1 0.85331 0.75875</span></span>
-<span id="cb10-28"><a href="#cb10-28" tabindex="-1"></a><span class="co">#&gt; ... with 980 more rows </span></span>
-<span id="cb10-29"><a href="#cb10-29" tabindex="-1"></a><span class="co">#&gt; -------------------------------------------------------</span></span></code></pre></div>
-<p>In multivariate models, <code>type</code> is crucial as it represents
-the type of event.</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="co"># Under bi-variate model, there are two types, 1 or 2.</span></span>
-<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a>res2<span class="sc">$</span>type[<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>]</span>
-<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a><span class="co">#&gt;  [1] 0 1 2 2 2 1 1 1 2 2</span></span></code></pre></div>
+called intensity components, and <code>lambda_component0</code>
+specifies their initial values <span class="math inline">\(\lambda_{ij}(0)\)</span>. If
+<code>lambda_component0</code> is omitted, the function determines these
+values internally.</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>mu2 <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="fl">0.2</span>), <span class="at">nrow =</span> <span class="dv">2</span>)</span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a>alpha2 <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="fl">0.5</span>, <span class="fl">0.9</span>, <span class="fl">0.9</span>, <span class="fl">0.5</span>), <span class="at">nrow =</span> <span class="dv">2</span>, <span class="at">byrow =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a>beta2 <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="fl">2.25</span>, <span class="fl">2.25</span>, <span class="fl">2.25</span>, <span class="fl">2.25</span>), <span class="at">nrow =</span> <span class="dv">2</span>, <span class="at">byrow =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a>hspec2 <span class="ot">&lt;-</span> <span class="fu">new</span>(<span class="st">&quot;hspec&quot;</span>, <span class="at">mu=</span>mu2, <span class="at">alpha=</span>alpha2, <span class="at">beta=</span>beta2)</span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a><span class="fu">print</span>(hspec2)</span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a><span class="co">#&gt; An object of class &quot;hspec&quot; of 2-dimensional Hawkes process</span></span>
+<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a><span class="co">#&gt; Slot mu: </span></span>
+<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a><span class="co">#&gt;      [,1]</span></span>
+<span id="cb11-10"><a href="#cb11-10" tabindex="-1"></a><span class="co">#&gt; [1,]  0.2</span></span>
+<span id="cb11-11"><a href="#cb11-11" tabindex="-1"></a><span class="co">#&gt; [2,]  0.2</span></span>
+<span id="cb11-12"><a href="#cb11-12" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb11-13"><a href="#cb11-13" tabindex="-1"></a><span class="co">#&gt; Slot alpha: </span></span>
+<span id="cb11-14"><a href="#cb11-14" tabindex="-1"></a><span class="co">#&gt;      [,1] [,2]</span></span>
+<span id="cb11-15"><a href="#cb11-15" tabindex="-1"></a><span class="co">#&gt; [1,]  0.5  0.9</span></span>
+<span id="cb11-16"><a href="#cb11-16" tabindex="-1"></a><span class="co">#&gt; [2,]  0.9  0.5</span></span>
+<span id="cb11-17"><a href="#cb11-17" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb11-18"><a href="#cb11-18" tabindex="-1"></a><span class="co">#&gt; Slot beta: </span></span>
+<span id="cb11-19"><a href="#cb11-19" tabindex="-1"></a><span class="co">#&gt;      [,1] [,2]</span></span>
+<span id="cb11-20"><a href="#cb11-20" tabindex="-1"></a><span class="co">#&gt; [1,] 2.25 2.25</span></span>
+<span id="cb11-21"><a href="#cb11-21" tabindex="-1"></a><span class="co">#&gt; [2,] 2.25 2.25</span></span></code></pre></div>
+<p>Use <code>hsim</code> to simulate the model.</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1107</span>)</span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>res2 <span class="ot">&lt;-</span> <span class="fu">hsim</span>(hspec2,  <span class="at">size=</span><span class="dv">1000</span>)</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a><span class="co">#&gt; Initial intensity components: auto -&gt; mean (unconditional component means).</span></span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a><span class="fu">summary</span>(res2)</span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a><span class="co">#&gt; -------------------------------------------------------</span></span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a><span class="co">#&gt; Simulation result of exponential (marked) Hawkes model.</span></span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a><span class="co">#&gt; Realized path :</span></span>
+<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a><span class="co">#&gt;       arrival N1 N2 mark lambda1 lambda2</span></span>
+<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a><span class="co">#&gt;  [1,] 0.00000  0  0    0 0.52941 0.52941</span></span>
+<span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a><span class="co">#&gt;  [2,] 0.57028  1  0    1 0.29130 0.29130</span></span>
+<span id="cb12-11"><a href="#cb12-11" tabindex="-1"></a><span class="co">#&gt;  [3,] 1.66175  1  1    1 0.25073 0.28505</span></span>
+<span id="cb12-12"><a href="#cb12-12" tabindex="-1"></a><span class="co">#&gt;  [4,] 2.17979  1  2    1 0.49638 0.38238</span></span>
+<span id="cb12-13"><a href="#cb12-13" tabindex="-1"></a><span class="co">#&gt;  [5,] 2.47685  1  3    1 0.81319 0.54975</span></span>
+<span id="cb12-14"><a href="#cb12-14" tabindex="-1"></a><span class="co">#&gt;  [6,] 2.64001  2  3    1 1.24825 0.78866</span></span>
+<span id="cb12-15"><a href="#cb12-15" tabindex="-1"></a><span class="co">#&gt;  [7,] 2.70249  3  3    1 1.54519 1.49341</span></span>
+<span id="cb12-16"><a href="#cb12-16" tabindex="-1"></a><span class="co">#&gt;  [8,] 2.94547  4  3    1 1.26810 1.46968</span></span>
+<span id="cb12-17"><a href="#cb12-17" tabindex="-1"></a><span class="co">#&gt;  [9,] 3.39313  4  4    1 0.77271 0.99242</span></span>
+<span id="cb12-18"><a href="#cb12-18" tabindex="-1"></a><span class="co">#&gt; [10,] 3.52533  4  5    1 1.29379 1.15989</span></span>
+<span id="cb12-19"><a href="#cb12-19" tabindex="-1"></a><span class="co">#&gt; [11,] 3.56971  5  5    1 2.00432 1.52115</span></span>
+<span id="cb12-20"><a href="#cb12-20" tabindex="-1"></a><span class="co">#&gt; [12,] 3.70761  5  6    1 1.88965 1.82866</span></span>
+<span id="cb12-21"><a href="#cb12-21" tabindex="-1"></a><span class="co">#&gt; [13,] 4.30122  5  7    1 0.88106 0.75983</span></span>
+<span id="cb12-22"><a href="#cb12-22" tabindex="-1"></a><span class="co">#&gt; [14,] 4.34337  6  7    1 1.63800 1.16393</span></span>
+<span id="cb12-23"><a href="#cb12-23" tabindex="-1"></a><span class="co">#&gt; [15,] 4.40222  7  7    1 1.89764 1.83275</span></span>
+<span id="cb12-24"><a href="#cb12-24" tabindex="-1"></a><span class="co">#&gt; [16,] 4.58943  8  7    1 1.64219 1.86211</span></span>
+<span id="cb12-25"><a href="#cb12-25" tabindex="-1"></a><span class="co">#&gt; [17,] 5.14665  9  7    1 0.75437 0.93131</span></span>
+<span id="cb12-26"><a href="#cb12-26" tabindex="-1"></a><span class="co">#&gt; [18,] 5.18186  9  8    1 1.17407 1.70707</span></span>
+<span id="cb12-27"><a href="#cb12-27" tabindex="-1"></a><span class="co">#&gt; [19,] 5.36167  9  9    1 1.45050 1.53925</span></span>
+<span id="cb12-28"><a href="#cb12-28" tabindex="-1"></a><span class="co">#&gt; [20,] 5.89118 10  9    1 0.85331 0.75875</span></span>
+<span id="cb12-29"><a href="#cb12-29" tabindex="-1"></a><span class="co">#&gt; ... with 980 more rows </span></span>
+<span id="cb12-30"><a href="#cb12-30" tabindex="-1"></a><span class="co">#&gt; -------------------------------------------------------</span></span></code></pre></div>
+<p>In multivariate models, <code>type</code> identifies the counting
+process associated with each event.</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="co"># A bivariate model has two event types: 1 and 2.</span></span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>res2<span class="sc">$</span>type[<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>]</span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a><span class="co">#&gt;  [1] 0 1 2 2 2 1 1 1 2 2</span></span></code></pre></div>
 <p>In multivariate models, the column names of <code>N</code> are
 <code>N1</code>, <code>N2</code>, <code>N3</code>, and so on.</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a>res2<span class="sc">$</span>N[<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>, ]</span>
-<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a><span class="co">#&gt;      N1 N2</span></span>
-<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a><span class="co">#&gt; [1,]  0  0</span></span>
-<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a><span class="co">#&gt; [2,]  1  0</span></span>
-<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a><span class="co">#&gt; [3,]  1  1</span></span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a>res2<span class="sc">$</span>N[<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>, ]</span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a><span class="co">#&gt;      N1 N2</span></span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a><span class="co">#&gt; [1,]  0  0</span></span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a><span class="co">#&gt; [2,]  1  0</span></span>
+<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a><span class="co">#&gt; [3,]  1  1</span></span></code></pre></div>
 <p>Similarly, the column names of <code>lambda</code> are
 <code>lambda1</code>, <code>lambda2</code>, <code>lambda3</code>, and so
 on.</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a>res2<span class="sc">$</span>lambda[<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>, ]</span>
-<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a><span class="co">#&gt;        lambda1   lambda2</span></span>
-<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a><span class="co">#&gt; [1,] 0.5294118 0.5294118</span></span>
-<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a><span class="co">#&gt; [2,] 0.2913028 0.2913028</span></span>
-<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a><span class="co">#&gt; [3,] 0.2507301 0.2850475</span></span></code></pre></div>
-<p>The column names of <code>lambda_component</code> are
-<code>lambda_component11</code>, <code>lambda_component12</code>,
-<code>lambda_component13</code>, and so on.</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a>res2<span class="sc">$</span>lambda_component[<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>, ]</span>
-<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a><span class="co">#&gt;        lambda11    lambda12   lambda21    lambda22</span></span>
-<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a><span class="co">#&gt; [1,] 0.11764706 0.211764706 0.21176471 0.117647059</span></span>
-<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a><span class="co">#&gt; [2,] 0.03260813 0.058694641 0.05869464 0.032608134</span></span>
-<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a><span class="co">#&gt; [3,] 0.04569443 0.005035631 0.08224997 0.002797573</span></span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a>res2<span class="sc">$</span>lambda[<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>, ]</span>
+<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a><span class="co">#&gt;        lambda1   lambda2</span></span>
+<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a><span class="co">#&gt; [1,] 0.5294118 0.5294118</span></span>
+<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a><span class="co">#&gt; [2,] 0.2913028 0.2913028</span></span>
+<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a><span class="co">#&gt; [3,] 0.2507301 0.2850475</span></span></code></pre></div>
+<p>In this bivariate model, the columns of <code>lambda_component</code>
+are <code>lambda11</code>, <code>lambda12</code>, <code>lambda21</code>,
+and <code>lambda22</code>.</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a>res2<span class="sc">$</span>lambda_component[<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>, ]</span>
+<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a><span class="co">#&gt;        lambda11    lambda12   lambda21    lambda22</span></span>
+<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a><span class="co">#&gt; [1,] 0.11764706 0.211764706 0.21176471 0.117647059</span></span>
+<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a><span class="co">#&gt; [2,] 0.03260813 0.058694641 0.05869464 0.032608134</span></span>
+<span id="cb16-5"><a href="#cb16-5" tabindex="-1"></a><span class="co">#&gt; [3,] 0.04569443 0.005035631 0.08224997 0.002797573</span></span></code></pre></div>
 <p>By definition, the following two expressions are equivalent:</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a>mu2[<span class="dv">1</span>] <span class="sc">+</span> <span class="fu">rowSums</span>(res2<span class="sc">$</span>lambda_component[<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>, <span class="fu">c</span>(<span class="st">&quot;lambda11&quot;</span>, <span class="st">&quot;lambda12&quot;</span>)])</span>
-<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a><span class="co">#&gt; [1] 0.5294118 0.2913028 0.2507301 0.4963769 0.8131889</span></span>
-<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a>res2<span class="sc">$</span>lambda[<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>, <span class="st">&quot;lambda1&quot;</span>]</span>
-<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a><span class="co">#&gt; [1] 0.5294118 0.2913028 0.2507301 0.4963769 0.8131889</span></span></code></pre></div>
-<p>From the results, we obtain vectors of realized
-<code>inter_arrival</code> and <code>type</code>. A bivariate model
-requires both <code>inter_arrival</code> and <code>type</code> for
-estimation.</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a>inter_arrival2 <span class="ot">&lt;-</span> res2<span class="sc">$</span>inter_arrival</span>
-<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a>type2 <span class="ot">&lt;-</span> res2<span class="sc">$</span>type</span></code></pre></div>
-<p>The log-likelihood is computed using the <code>logLik</code>
-function.</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a><span class="fu">logLik</span>(hspec2, <span class="at">inter_arrival =</span> inter_arrival2, <span class="at">type =</span> type2)</span>
-<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a><span class="co">#&gt; The initial values for intensity processes are not provided. Internally determined initial values are used.</span></span>
-<span id="cb17-3"><a href="#cb17-3" tabindex="-1"></a><span class="co">#&gt; loglikelihood </span></span>
-<span id="cb17-4"><a href="#cb17-4" tabindex="-1"></a><span class="co">#&gt;     -974.2809</span></span></code></pre></div>
-<p>Maximum log-likelihood estimation is performed using the
-<code>hfit</code> function. In this process, the parameter values in
-<code>hspec0</code>, such as <code>mu</code>, <code>alpha</code>, and
-<code>beta</code>, serve as starting points for the numerical
-optimization. For illustration purposes, we set
-<code>hspec0 &lt;- hspec2</code>. Since the true parameter values are
-unknown in practical applications, these initial guesses are used. The
-realized <code>inter_arrival</code> and <code>type</code> data are
-utilized for estimation.</p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a>hspec0 <span class="ot">&lt;-</span> hspec2</span>
-<span id="cb18-2"><a href="#cb18-2" tabindex="-1"></a>mle <span class="ot">&lt;-</span> <span class="fu">hfit</span>(hspec0, <span class="at">inter_arrival =</span> inter_arrival2, <span class="at">type =</span> type2)</span>
-<span id="cb18-3"><a href="#cb18-3" tabindex="-1"></a><span class="fu">summary</span>(mle)</span>
-<span id="cb18-4"><a href="#cb18-4" tabindex="-1"></a><span class="co">#&gt; --------------------------------------------</span></span>
-<span id="cb18-5"><a href="#cb18-5" tabindex="-1"></a><span class="co">#&gt; Maximum Likelihood estimation</span></span>
-<span id="cb18-6"><a href="#cb18-6" tabindex="-1"></a><span class="co">#&gt; BFGS maximization, 36 iterations</span></span>
-<span id="cb18-7"><a href="#cb18-7" tabindex="-1"></a><span class="co">#&gt; Return code 0: successful convergence </span></span>
-<span id="cb18-8"><a href="#cb18-8" tabindex="-1"></a><span class="co">#&gt; Log-Likelihood: -970.1408 </span></span>
-<span id="cb18-9"><a href="#cb18-9" tabindex="-1"></a><span class="co">#&gt; 4  free parameters</span></span>
-<span id="cb18-10"><a href="#cb18-10" tabindex="-1"></a><span class="co">#&gt; Estimates:</span></span>
-<span id="cb18-11"><a href="#cb18-11" tabindex="-1"></a><span class="co">#&gt;          Estimate Std. error t value  Pr(&gt; t)    </span></span>
-<span id="cb18-12"><a href="#cb18-12" tabindex="-1"></a><span class="co">#&gt; mu1       0.19095    0.01636  11.671  &lt; 2e-16 ***</span></span>
-<span id="cb18-13"><a href="#cb18-13" tabindex="-1"></a><span class="co">#&gt; alpha1.1  0.48217    0.07405   6.511 7.45e-11 ***</span></span>
-<span id="cb18-14"><a href="#cb18-14" tabindex="-1"></a><span class="co">#&gt; alpha1.2  0.98625    0.09495  10.387  &lt; 2e-16 ***</span></span>
-<span id="cb18-15"><a href="#cb18-15" tabindex="-1"></a><span class="co">#&gt; beta1.1   2.07987    0.16952  12.269  &lt; 2e-16 ***</span></span>
-<span id="cb18-16"><a href="#cb18-16" tabindex="-1"></a><span class="co">#&gt; ---</span></span>
-<span id="cb18-17"><a href="#cb18-17" tabindex="-1"></a><span class="co">#&gt; Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</span></span>
-<span id="cb18-18"><a href="#cb18-18" tabindex="-1"></a><span class="co">#&gt; --------------------------------------------</span></span></code></pre></div>
-<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" tabindex="-1"></a><span class="fu">coef</span>(mle)</span>
-<span id="cb19-2"><a href="#cb19-2" tabindex="-1"></a><span class="co">#&gt;       mu1  alpha1.1  alpha1.2   beta1.1 </span></span>
-<span id="cb19-3"><a href="#cb19-3" tabindex="-1"></a><span class="co">#&gt; 0.1909541 0.4821725 0.9862542 2.0798691</span></span></code></pre></div>
-<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" tabindex="-1"></a>miscTools<span class="sc">::</span><span class="fu">stdEr</span>(mle)</span>
-<span id="cb20-2"><a href="#cb20-2" tabindex="-1"></a><span class="co">#&gt;        mu1   alpha1.1   alpha1.2    beta1.1 </span></span>
-<span id="cb20-3"><a href="#cb20-3" tabindex="-1"></a><span class="co">#&gt; 0.01636127 0.07405118 0.09495461 0.16952428</span></span></code></pre></div>
-<p>Also see the <a href="https://ksublee.github.io/emhawkes/articles/extended_example.html">extended
-vignette on GitHub</a>.</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a>mu2[<span class="dv">1</span>] <span class="sc">+</span> <span class="fu">rowSums</span>(res2<span class="sc">$</span>lambda_component[<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>, <span class="fu">c</span>(<span class="st">&quot;lambda11&quot;</span>, <span class="st">&quot;lambda12&quot;</span>)])</span>
+<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a><span class="co">#&gt; [1] 0.5294118 0.2913028 0.2507301 0.4963769 0.8131889</span></span>
+<span id="cb17-3"><a href="#cb17-3" tabindex="-1"></a>res2<span class="sc">$</span>lambda[<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>, <span class="st">&quot;lambda1&quot;</span>]</span>
+<span id="cb17-4"><a href="#cb17-4" tabindex="-1"></a><span class="co">#&gt; [1] 0.5294118 0.2913028 0.2507301 0.4963769 0.8131889</span></span></code></pre></div>
+<p>Extract the observed <code>inter_arrival</code> and <code>type</code>
+vectors from the simulation result. Both are required to fit a bivariate
+model.</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a>inter_arrival2 <span class="ot">&lt;-</span> res2<span class="sc">$</span>inter_arrival</span>
+<span id="cb18-2"><a href="#cb18-2" tabindex="-1"></a>type2 <span class="ot">&lt;-</span> res2<span class="sc">$</span>type</span></code></pre></div>
+<p>Use <code>logLik</code> to evaluate the log-likelihood.</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" tabindex="-1"></a><span class="fu">logLik</span>(hspec2, <span class="at">inter_arrival =</span> inter_arrival2, <span class="at">type =</span> type2)</span>
+<span id="cb19-2"><a href="#cb19-2" tabindex="-1"></a><span class="co">#&gt; Initial intensity components: auto -&gt; mean (unconditional component means).</span></span>
+<span id="cb19-3"><a href="#cb19-3" tabindex="-1"></a><span class="co">#&gt; loglikelihood </span></span>
+<span id="cb19-4"><a href="#cb19-4" tabindex="-1"></a><span class="co">#&gt;     -974.2809</span></span></code></pre></div>
+<p>Use <code>hfit</code> to estimate the parameters from
+<code>inter_arrival</code> and <code>type</code>. The values of
+<code>mu</code>, <code>alpha</code>, and <code>beta</code> in
+<code>hspec0</code> provide starting points for optimization. Here, we
+use the simulation parameters by setting
+<code>hspec0 &lt;- hspec2</code>. For observed data, choose initial
+values because the true parameters are unknown.</p>
+<p>By default, <code>reduced = TRUE</code> groups equal starting values
+within each parameter matrix. Here, the two entries of <code>mu</code>
+share one parameter, the diagonal and off-diagonal entries of
+<code>alpha</code> give two parameters, and all entries of
+<code>beta</code> share one parameter. The fit therefore estimates four
+parameters. <code>hfit</code> prints a short explanation once before
+optimization.</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" tabindex="-1"></a>hspec0 <span class="ot">&lt;-</span> hspec2</span>
+<span id="cb20-2"><a href="#cb20-2" tabindex="-1"></a>mle <span class="ot">&lt;-</span> <span class="fu">hfit</span>(hspec0, <span class="at">inter_arrival =</span> inter_arrival2, <span class="at">type =</span> type2)</span>
+<span id="cb20-3"><a href="#cb20-3" tabindex="-1"></a><span class="co">#&gt; Initial intensity components: auto -&gt; mean (unconditional component means).</span></span>
+<span id="cb20-4"><a href="#cb20-4" tabindex="-1"></a><span class="co">#&gt; hfit: equal starting values within each matrix share a parameter (reduced = TRUE; mu, alpha, beta).</span></span>
+<span id="cb20-5"><a href="#cb20-5" tabindex="-1"></a><span class="co">#&gt; Use reduced = FALSE to estimate matrix entries separately.</span></span>
+<span id="cb20-6"><a href="#cb20-6" tabindex="-1"></a><span class="fu">summary</span>(mle)</span>
+<span id="cb20-7"><a href="#cb20-7" tabindex="-1"></a><span class="co">#&gt; --------------------------------------------</span></span>
+<span id="cb20-8"><a href="#cb20-8" tabindex="-1"></a><span class="co">#&gt; Maximum Likelihood estimation</span></span>
+<span id="cb20-9"><a href="#cb20-9" tabindex="-1"></a><span class="co">#&gt; BFGS maximization, 33 iterations</span></span>
+<span id="cb20-10"><a href="#cb20-10" tabindex="-1"></a><span class="co">#&gt; Return code 0: successful convergence </span></span>
+<span id="cb20-11"><a href="#cb20-11" tabindex="-1"></a><span class="co">#&gt; Log-Likelihood: -970.1408 </span></span>
+<span id="cb20-12"><a href="#cb20-12" tabindex="-1"></a><span class="co">#&gt; 4  free parameters</span></span>
+<span id="cb20-13"><a href="#cb20-13" tabindex="-1"></a><span class="co">#&gt; Estimates:</span></span>
+<span id="cb20-14"><a href="#cb20-14" tabindex="-1"></a><span class="co">#&gt;          Estimate Std. error t value  Pr(&gt; t)    </span></span>
+<span id="cb20-15"><a href="#cb20-15" tabindex="-1"></a><span class="co">#&gt; mu1       0.19095    0.01638  11.656  &lt; 2e-16 ***</span></span>
+<span id="cb20-16"><a href="#cb20-16" tabindex="-1"></a><span class="co">#&gt; alpha1.1  0.48217    0.07430   6.489 8.64e-11 ***</span></span>
+<span id="cb20-17"><a href="#cb20-17" tabindex="-1"></a><span class="co">#&gt; alpha1.2  0.98625    0.09576  10.300  &lt; 2e-16 ***</span></span>
+<span id="cb20-18"><a href="#cb20-18" tabindex="-1"></a><span class="co">#&gt; beta1.1   2.07987    0.17203  12.091  &lt; 2e-16 ***</span></span>
+<span id="cb20-19"><a href="#cb20-19" tabindex="-1"></a><span class="co">#&gt; ---</span></span>
+<span id="cb20-20"><a href="#cb20-20" tabindex="-1"></a><span class="co">#&gt; Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</span></span>
+<span id="cb20-21"><a href="#cb20-21" tabindex="-1"></a><span class="co">#&gt; --------------------------------------------</span></span></code></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" tabindex="-1"></a><span class="fu">coef</span>(mle)</span>
+<span id="cb21-2"><a href="#cb21-2" tabindex="-1"></a><span class="co">#&gt;       mu1  alpha1.1  alpha1.2   beta1.1 </span></span>
+<span id="cb21-3"><a href="#cb21-3" tabindex="-1"></a><span class="co">#&gt; 0.1909541 0.4821725 0.9862541 2.0798690</span></span></code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" tabindex="-1"></a>miscTools<span class="sc">::</span><span class="fu">stdEr</span>(mle)</span>
+<span id="cb22-2"><a href="#cb22-2" tabindex="-1"></a><span class="co">#&gt;        mu1   alpha1.1   alpha1.2    beta1.1 </span></span>
+<span id="cb22-3"><a href="#cb22-3" tabindex="-1"></a><span class="co">#&gt; 0.01638200 0.07430500 0.09575744 0.17202504</span></span></code></pre></div>
+<p>The restored matrices retain the shared parameters from this fit. The
+diagonal entries of <code>alpha</code> remain equal, as do its
+off-diagonal entries.</p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" tabindex="-1"></a>estimated2 <span class="ot">&lt;-</span> <span class="fu">fitted_hspec</span>(mle)</span>
+<span id="cb23-2"><a href="#cb23-2" tabindex="-1"></a>estimated2<span class="sc">@</span>alpha</span>
+<span id="cb23-3"><a href="#cb23-3" tabindex="-1"></a><span class="co">#&gt;           [,1]      [,2]</span></span>
+<span id="cb23-4"><a href="#cb23-4" tabindex="-1"></a><span class="co">#&gt; [1,] 0.4821725 0.9862541</span></span>
+<span id="cb23-5"><a href="#cb23-5" tabindex="-1"></a><span class="co">#&gt; [2,] 0.9862541 0.4821725</span></span>
+<span id="cb23-6"><a href="#cb23-6" tabindex="-1"></a>estimated2<span class="sc">@</span>beta</span>
+<span id="cb23-7"><a href="#cb23-7" tabindex="-1"></a><span class="co">#&gt;          [,1]     [,2]</span></span>
+<span id="cb23-8"><a href="#cb23-8" tabindex="-1"></a><span class="co">#&gt; [1,] 2.079869 2.079869</span></span>
+<span id="cb23-9"><a href="#cb23-9" tabindex="-1"></a><span class="co">#&gt; [2,] 2.079869 2.079869</span></span></code></pre></div>
+<p>Set <code>reduced = FALSE</code> to estimate all ten matrix entries
+separately, even when their starting values are equal. Use
+<code>suppressMessages(hfit(...))</code> to hide the startup
+explanation. For function components, parameters with the same name are
+shared under either setting. A zero in a numeric matrix is an estimated
+starting value; use a component function to fix selected entries at
+zero.</p>
 </div>
+<div id="observed-data-and-initial-state" class="section level3">
+<h3>Observed data and initial state</h3>
+<p>The first row represents the initial state and is not an event. For
+event times measured from the observation start, prepare the input as
+follows:</p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" tabindex="-1"></a>inter_arrival <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="fu">diff</span>(<span class="fu">c</span>(<span class="dv">0</span>, event_times)))</span>
+<span id="cb24-2"><a href="#cb24-2" tabindex="-1"></a>type <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">0</span>, event_types)</span>
+<span id="cb24-3"><a href="#cb24-3" tabindex="-1"></a>mark <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">0</span>, event_marks)</span></code></pre></div>
+<p>Omit <code>type</code> for a univariate model and <code>mark</code>
+for unit marks. The vectors must have the same length; event types range
+from 1 to the model dimension. Event order is preserved, including
+events at the same time. The likelihood currently ends at the last
+supplied event.</p>
+<p><code>N0</code> and <code>Nc0</code> specify initial event counts and
+mark totals. Pass <code>Nc0</code> by name in <code>hfit</code>, and use
+the same initial state when comparing simulation and likelihood results.
+<code>lambda_component0</code> can be a scalar or a matrix matching
+<code>alpha</code> and <code>beta</code>. If supplied, <code>N</code>
+and <code>Nc</code> must have one row per input row and one column per
+dimension, and must agree with the events and initial counts. Their rows
+contain the cumulative values after each event.</p>
+</div>
+</div>
+<div id="choosing-the-optimizer" class="section level2">
+<h2>Choosing the optimizer</h2>
+<p><code>hfit()</code> uses the optional maxLik package by default. To
+use R’s optimization functions directly, select
+<code>optimizer = &quot;stats&quot;</code>; likelihood engine selection and model
+specification are unchanged. This route also works without maxLik. The
+earlier fitting examples require maxLik and are not evaluated when it is
+unavailable.</p>
+<div class="sourceCode" id="cb25"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" tabindex="-1"></a><span class="fu">library</span>(emhawkes)</span>
+<span id="cb25-2"><a href="#cb25-2" tabindex="-1"></a>poisson <span class="ot">&lt;-</span> <span class="fu">new</span>(<span class="st">&quot;hspec&quot;</span>, <span class="at">mu =</span> <span class="fl">0.5</span>, <span class="at">alpha =</span> <span class="dv">0</span>, <span class="at">beta =</span> <span class="dv">1</span>)</span>
+<span id="cb25-3"><a href="#cb25-3" tabindex="-1"></a>fit_stats <span class="ot">&lt;-</span> <span class="fu">hfit</span>(poisson, <span class="fu">c</span>(<span class="dv">0</span>, <span class="fl">0.2</span>, <span class="fl">0.3</span>, <span class="fl">0.5</span>), <span class="at">optimizer =</span> <span class="st">&quot;stats&quot;</span>,</span>
+<span id="cb25-4"><a href="#cb25-4" tabindex="-1"></a>                  <span class="at">lambda_component0 =</span> <span class="dv">0</span>, <span class="at">fixed =</span> <span class="fu">c</span>(<span class="cn">FALSE</span>, <span class="cn">TRUE</span>, <span class="cn">TRUE</span>),</span>
+<span id="cb25-5"><a href="#cb25-5" tabindex="-1"></a>                  <span class="at">control =</span> <span class="fu">list</span>(<span class="at">maxit =</span> <span class="dv">500</span>, <span class="at">reltol =</span> <span class="fl">1e-12</span>))</span>
+<span id="cb25-6"><a href="#cb25-6" tabindex="-1"></a><span class="fu">summary</span>(fit_stats)</span>
+<span id="cb25-7"><a href="#cb25-7" tabindex="-1"></a><span class="co">#&gt; Hawkes maximum likelihood fit (stats::optim, BFGS)</span></span>
+<span id="cb25-8"><a href="#cb25-8" tabindex="-1"></a><span class="co">#&gt; Log likelihood: 0.2958369</span></span>
+<span id="cb25-9"><a href="#cb25-9" tabindex="-1"></a><span class="co">#&gt; Convergence code: 0 (Normal convergence.)</span></span>
+<span id="cb25-10"><a href="#cb25-10" tabindex="-1"></a><span class="co">#&gt;        Estimate Std. Error z value Pr(&gt;|z|)  </span></span>
+<span id="cb25-11"><a href="#cb25-11" tabindex="-1"></a><span class="co">#&gt; mu1      3.0000     1.7321  1.7321  0.08326 .</span></span>
+<span id="cb25-12"><a href="#cb25-12" tabindex="-1"></a><span class="co">#&gt; alpha1   0.0000     0.0000      NA       NA  </span></span>
+<span id="cb25-13"><a href="#cb25-13" tabindex="-1"></a><span class="co">#&gt; beta1    1.0000     0.0000      NA       NA  </span></span>
+<span id="cb25-14"><a href="#cb25-14" tabindex="-1"></a><span class="co">#&gt; ---</span></span>
+<span id="cb25-15"><a href="#cb25-15" tabindex="-1"></a><span class="co">#&gt; Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</span></span>
+<span id="cb25-16"><a href="#cb25-16" tabindex="-1"></a><span class="co">#&gt; Fixed parameters: alpha1, beta1</span></span>
+<span id="cb25-17"><a href="#cb25-17" tabindex="-1"></a><span class="fu">fit_diagnostics</span>(fit_stats)<span class="sc">$</span>computation<span class="sc">$</span>optimizer</span>
+<span id="cb25-18"><a href="#cb25-18" tabindex="-1"></a><span class="co">#&gt; $requested</span></span>
+<span id="cb25-19"><a href="#cb25-19" tabindex="-1"></a><span class="co">#&gt; [1] &quot;stats&quot;</span></span>
+<span id="cb25-20"><a href="#cb25-20" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb25-21"><a href="#cb25-21" tabindex="-1"></a><span class="co">#&gt; $used</span></span>
+<span id="cb25-22"><a href="#cb25-22" tabindex="-1"></a><span class="co">#&gt; [1] &quot;optim&quot;</span></span>
+<span id="cb25-23"><a href="#cb25-23" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb25-24"><a href="#cb25-24" tabindex="-1"></a><span class="co">#&gt; $method</span></span>
+<span id="cb25-25"><a href="#cb25-25" tabindex="-1"></a><span class="co">#&gt; [1] &quot;BFGS&quot;</span></span></code></pre></div>
+<p>The stats route supports BFGS, Nelder-Mead, CG and L-BFGS-B. Linear
+inequality constraints use <code>constrOptim()</code> and require an
+interior starting point; equality constraints are not supported. Use
+<code>control$maxit</code> rather than maxLik’s <code>iterlim</code>. It
+defaults to stable final curvature; boundary estimates have no Wald
+covariance. Use <code>fitted_hspec()</code> and
+<code>fit_initial_state()</code> with either provider. Changing
+providers does not guarantee identical estimates or cure convergence and
+identification problems.</p>
+</div>
+<div id="further-reading" class="section level2">
+<h2>Further reading</h2>
+<ul>
+<li><a href="https://ksublee.github.io/emhawkes/articles/fitting-and-inference.html">Fitting
+and inference</a>: parameter settings, initial states, fitted models,
+residual diagnostics and standard errors.</li>
+<li><a href="https://ksublee.github.io/emhawkes/articles/extended_example.html">Extended
+examples</a>: marked, state-dependent, multi-kernel and flexible
+residual models.</li>
+<li><a href="https://ksublee.github.io/emhawkes/articles/computation.html">Computation</a>:
+likelihood engines, analytic gradients, Jacobians and performance.</li>
+<li><a href="https://ksublee.github.io/emhawkes/reference/index.html">Reference</a>:
+function arguments and return values.</li>
+</ul>
 </div>
 
 

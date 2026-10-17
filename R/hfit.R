@@ -1,48 +1,322 @@
-#' @include hspec.R hmoment.R hllf.R utilities.R
+#' @include hspec.R hmoment.R hllf.R utilities.R hinterface.R huncertainty.R hgradient.R
 NULL
 
 #' Perform Maximum Likelihood Estimation
 #'
-#' This is a generic function named `hfit` designed for estimating the parameters
-#' of the exponential Hawkes model. It is implemented as an S4 method for two main reasons:
-#'
-#' Model Representation: To represent the structure of the model as an `hspec` object.
-#' The multivariate marked Hawkes model has numerous variations, and using an S4 class
-#' allows for a flexible and structured approach.
-#'
-#' Optimization Initialization: To provide a starting point for numerical optimization.
-#' The parameter values assigned to the `hspec` slots serve as initial values for the optimization process.
-#'
-#' This function utilizes the \code{\link[maxLik]{maxLik}} package for optimization.
+#' Estimate exponential Hawkes model parameters by maximum likelihood.
+#' The supplied \code{\link{hspec-class}} object defines the model and the starting
+#' values for optimization with \code{\link[maxLik]{maxLik}} or R's stats functions.
 #'
 #' @param object An \code{\link{hspec-class}} object containing the parameter values.
 #' @param inter_arrival A vector of inter-arrival times for events across all dimensions, starting with zero.
 #' @param type A vector indicating the dimensions, represented by numbers like 1, 2, 3, etc., starting with zero.
 #' @param mark A vector of mark (jump) sizes, starting with zero.
-#' @param N A matrix representing counting processes.
-#' @param Nc A matrix of counting processes weighted by mark sizes.
-#' @param lambda_component0 Initial values for the lambda component \eqn{\lambda_{ij}}.
-#' Can be a numeric value or a matrix.
-#' Must have the same number of rows and columns as \code{alpha} or \code{beta} in \code{object}.
-#' @param N0 Initial values for the counting processes matrix \code{N}.
+#' @param N Optional cumulative event-count matrix, with one row per input row
+#' and one column per event type. Each row contains counts after that event.
+#' @param Nc Optional cumulative mark-total matrix with the same shape as `N`.
+#' @param lambda_component0 Initial intensity components \eqn{\lambda_{ij}(0)},
+#' excluding the baseline `mu`.
+#' A finite scalar is expanded to every kernel component. A matrix must match
+#' the shape of `alpha` and `beta`. For the built-in likelihood, `"auto"`
+#' (also `NULL`) selects unconditional component means for supported stable
+#' constant numeric linear models, and zero otherwise. `"mean"` requires supported
+#' finite means; `"zero"` fixes zero components. Selection is reported once
+#' and held throughout optimization. Mean values vary with fitted parameters;
+#' invalid mean proposals have likelihood `-Inf`, without switching to zero.
+#' For `mylogLik`, `"auto"` passes `NULL` without automatic initialization.
+#' Mean initialization excludes nonzero `eta`, impact callbacks and custom
+#' residual distributions. Function-valued core parameters use zero in `"auto"`.
+#' @param N0 Initial event counts: a finite scalar or one value per event type.
+#' If omitted, use the first row of supplied `N`, or zero when `N` is absent.
+#' @param Nc0 Initial mark totals: a finite scalar or one value per event type.
+#' If omitted, use the first row of supplied `Nc`, or zero when `Nc` is absent.
+#' This argument must be named.
 #' @param mylogLik A user-defined log-likelihood function, which must accept an `object` argument consistent with \code{object}.
-#' @param reduced Logical; if `TRUE`, performs reduced estimation.
-#' @param constraint Constraint matrices. Refer to \code{\link[maxLik]{maxLik}} for more details.
+#' @param reduced Logical; if `TRUE`, equal entries within each parameter matrix
+#' share one parameter. If `FALSE`, each matrix entry is estimated separately.
+#' Function components share parameters by name. Conflicting starting values for
+#' a shared name produce a warning; the first value is used.
+#' @param constraints `NULL` or a constraint list passed to [maxLik::maxLik()].
+#' `constraint` is an equivalent named-only alias. Supply a non-`NULL` value
+#' through only one of these arguments.
+#' @param constraint Named-only alias for `constraints`, accepted without a warning.
+#' @param optimizer Named-only optimizer provider. `"maxLik"` (default) requires
+#' the optional maxLik package. `"stats"` directly uses R's [stats::optim()] or,
+#' for linear inequalities, [stats::constrOptim()]. It works without maxLik.
 #' @param method The optimization method to be used. Refer to \code{\link[maxLik]{maxLik}} for more details.
-#' @param grad A gradient matrix for the likelihood function. Refer to \code{\link[maxLik]{maxLik}} for more details.
-#' @param hess A Hessian matrix for the likelihood function. Refer to \code{\link[maxLik]{maxLik}} for more details.
+#' @param grad Optional gradient function passed to [maxLik::maxLik()]. Its first
+#' argument is the optimization parameter vector. Takes precedence over `gradient`.
+#' @param gradient Named-only choice, `"numeric"` (default) or `"analytic"`.
+#' Request `"analytic"` for the Rcpp score of a Hawkes specification.
+#' Parameter-only functions require component derivatives through `jacobian`.
+#' Supports shared and fixed parameters, numeric mark effects, multi-kernel mappings,
+#' and explicit or differentiable automatic initial states. Requires the `"auto"`
+#' or `"cpp"` engine. Unsupported specifications produce an error.
+#' @param jacobian Named-only list of derivatives for parameter-only `mu`, `alpha`,
+#' `beta`, and `eta` functions for analytic gradients. Each entry is a numeric
+#' matrix or a function with the single argument `param` returning that matrix.
+#' Rows follow `as.vector()` of the component matrix (column-major order); columns
+#' are named with the component's local `param` names. Column order is arbitrary.
+#' Required for each function with nonempty `param`. For an observed-state `impact`,
+#' also supply `jacobian$impact`. Observed baselines use a full-parameter
+#' `jacobian$mu`; current-state feedback uses parameter and state Jacobians.
+#' See Details for these conventions.
+#' Also used by `final_hessian = "stable"` when optimization uses numerical
+#' differentiation or a supplied `grad`; otherwise unused with those choices.
+#' @param hess Optional Hessian function passed to [maxLik::maxLik()]. Its first
+#' argument is the optimization parameter vector. If `NULL`, use numerical differentiation.
+#' @param final_hessian Named-only choice, `"maxLik"`, `"stable"` or `"optimizer"`.
+#' The default is `"maxLik"` with the maxLik provider and `"stable"` with stats.
+#' `"optimizer"` retains the selected provider's final Hessian; `"maxLik"` is
+#' accepted only with the maxLik provider.
+#' The default retains the final Hessian and covariance calculation from `maxLik`.
+#' Request `"stable"` to recalculate numerical final curvature for the built-in
+#' Hawkes likelihood using scaled central differences and Richardson extrapolation.
+#' With the `"auto"` or `"cpp"` engine, use the built-in analytic score when
+#' supported and supplied with any required `jacobian`, independently of the
+#' optimizer's `gradient` choice. Otherwise use likelihood differences. The
+#' `"r"` engine retains likelihood differences. Failed score evaluations also
+#' fall back to likelihood differences; inspect `fit_diagnostics()` for the reason.
+#' For unconstrained BFGS, CG, Nelder-Mead, and SANN fits without supplied `hess`
+#' or an explicit `finalHessian` override, skip maxLik's separate final Hessian.
+#' Set `finalHessian = TRUE` to retain that extra calculation. Newton methods
+#' and constrained fits retain it. Inspect `fit_diagnostics()` for the recorded choice.
+#' User-supplied `hess`, `finalHessian = FALSE`, BHHH curvature, custom likelihoods,
+#' and residual-distribution likelihoods retain their calculation choices.
 #' @param verbose Logical; if `TRUE`, prints the progress of the estimation process.
 #' @param ... Additional parameters for optimization. Refer to \code{\link[maxLik]{maxLik}} for more details.
 #'
-#' @return \code{\link[maxLik]{maxLik}} object
+#' @return With `optimizer = "maxLik"`, a \code{\link[maxLik]{maxLik}} object;
+#' with `optimizer = "stats"`, an `emhawkes_stats_fit` supporting `coef()`,
+#' `logLik()`, `vcov()`, `summary()` and `print()`. Both have an `emhawkes` attribute
+#' containing the original specification, parameter map, normalized initial-state
+#' arguments, constraints, `reduced` setting, supplied analytic Jacobians, and final
+#' curvature diagnostics and recorded calculation methods.
+#' Use [fit_diagnostics()] to inspect the methods and checks and [fitted_hspec()] to restore the estimated
+#' specification and [fit_initial_state()] to retrieve its initial-state arguments.
+#'
+#' @details
+#' Optimizer selection is independent of `emhawkes.engine`. The stats provider
+#' supports `BFGS`, `Nelder-Mead`, `CG` and `L-BFGS-B`. Linear inequalities
+#' (`ineqA %*% param + ineqB >= 0`) use `constrOptim()` with BFGS or Nelder-Mead;
+#' the start must be strictly inside every inequality involving free parameters.
+#' Equality constraints and maxLik-only methods are rejected. Both constraint
+#' spellings have the same meaning. Fixed parameters may be specified by a full
+#' logical vector, positions or names; constraints are reduced accordingly.
+#'
+#' With stats, `...` accepts `fixed`, `control`, `finalHessian`, `lower`, `upper`,
+#' `outer.iterations` and `outer.eps`. Use `control = list(maxit = 500)` rather
+#' than maxLik's `iterlim`. `control$parscale` and `control$ndeps` refer to free
+#' parameters. Bounds are scalars or full-parameter vectors, require L-BFGS-B,
+#' and cannot be combined with linear constraints. L-BFGS-B requires finite
+#' likelihoods throughout the search. Unsupported arguments are errors.
+#'
+#' Stats results retain convergence codes and evaluation counts from R. Explicit
+#' derivatives take precedence over likelihood derivative attributes. Numerical
+#' final curvature uses `optimHess()`; stable curvature reuses the same checks
+#' as maxLik fits. Near a constraint boundary, Wald covariance is unavailable.
+#' Different optimizers and stopping rules need not give identical estimates.
+#' The default maxLik path and its result classes are preserved; there is no
+#' automatic retry with another provider. Without maxLik installed, select
+#' `optimizer = "stats"` explicitly. Saved stats fits remain usable without it.
+#'
+#' Observations are checked once before optimization. The first row is the initial
+#' state, and supplied counting processes contain values after each event.
+#' Omit `type` for a univariate model and `mark` for unit marks. The observation
+#' vectors have the same length. The likelihood ends at the last supplied event.
+#'
+#' Functions with a `param` argument must provide a default named numeric vector;
+#' `numeric(0)` and functions without `param` are allowed for fixed components.
+#' A custom `mylogLik` receives its declared arguments from `object`, the observation
+#' arguments, `lambda_component0`, `param`, and `reduced`. Optional defaults are
+#' preserved; `...` receives the remaining context. Additional inputs should be
+#' captured in the function's environment or given defaults.
+#'
+#' When equal matrix entries are grouped, a message lists the affected components
+#' once before optimization. Use `suppressMessages(hfit(...))` to hide it.
+#' Setting `reduced = FALSE` separates matrix entries; function parameters still
+#' share values by name. A numeric zero is a starting value, not a fixed zero.
+#' To fix entries at zero, use a component function with constants at those positions.
+#' To hold optimization parameters at their starting values, pass `fixed` through
+#' `...` as described by [maxLik::maxLik()]. Fixing a shared parameter fixes all
+#' entries that use it.
+#'
+#' The built-in likelihood uses the calculation engine selected by
+#' `options(emhawkes.engine = "auto")` by default. It selects C++ for supported
+#' numeric and callback models described below, and R otherwise. Setting `"r"`
+#' forces the R likelihood for comparison or troubleshooting. Setting `"cpp"`
+#' requires C++ support and errors on unsupported models; it is not needed for
+#' automatic acceleration. Inspect `fit_diagnostics(fit)$computation$engine`
+#' for actual engines and fallback reasons. A custom `mylogLik` bypasses this
+#' selection. Standalone [logLik()] supports fewer C++ models than `hfit()`.
+#' With `gradient = "analytic"`, Rcpp computes the likelihood and its gradient
+#' using native recursions and cached results at the same parameter vector. Matrix scores are
+#' summed according to the saved parameter map. Mean initial states include
+#' their parameter derivatives; zero and explicit initial components are fixed.
+#' Observed baselines and current-component impacts
+#' are supported with Jacobians as described below. Full intensity histories,
+#' mark densities, residual distributions, and custom likelihoods are not supported
+#' by this option. Equality-constrained optimization is also excluded.
+#' BHHH requires event scores and cannot use this total score.
+#' A supplied `grad` takes precedence. A supplied `hess` is retained; otherwise
+#' `maxLik` can calculate curvature by differentiating the analytic gradient.
+#' Optimization paths and last digits can differ from numerical differentiation.
+#'
+#' Analytic function components must have the single argument `param` and return
+#' plain numeric matrices with constant dimensions. Their values and Jacobians
+#' must be deterministic, differentiable functions of `param`; captured constants
+#' must remain fixed. Supply exact derivatives in `jacobian`; the package does not
+#' automatically differentiate function bodies or verify the supplied formulas.
+#' Fixed entries have zero derivative. Components with `param = numeric(0)` need
+#' no Jacobian. Contributions for shared parameter names are added across components.
+#' With `gradient = "analytic"`, missing or malformed Jacobians produce an error.
+#' For these functions, the
+#' analytic option evaluates their matrices in R and the likelihood and component
+#' scores in Rcpp. The default `emhawkes.engine = "auto"` also selects C++ for
+#' supported function-valued models with numerical differentiation. No Jacobian
+#' is required. Unsupported specifications use R; `"cpp"` requires C++ support,
+#' and `"r"` selects the R likelihood. User callback errors propagate.
+#' This option supports parameter-only `mu`, `alpha`, `beta`, and `eta` functions
+#' returning plain numeric matrices with constant dimensions. They must be
+#' deterministic functions of `param`, with captured values held fixed.
+#' Observed-state `impact` functions are also supported without Jacobians.
+#' Observed baselines and sequential state-dependent impacts are also supported
+#' as described below. Mark densities and residual distributions are excluded.
+#' Supplied `grad` and `hess` are retained. Standalone `logLik()` also uses C++
+#' for parameter-only component functions, observed baselines, and observed or
+#' sequential state-dependent impacts, including restored fitted models. Automatic
+#' fallback through `...` assumes deterministic callbacks with fixed captures;
+#' it may evaluate a callback again when an unsupported state read is detected.
+#'
+#' Observed-state `impact` functions may use `n`, `N`, `Nc`, `mark`, `type`,
+#' `inter_arrival`, and the resolved `mu`, `alpha`, and `beta` matrices.
+#' They return a finite, plain numeric matrix with the kernel dimensions. As in the R
+#' likelihood, `N[n, ]` and `Nc[n, ]` include the current event; use row `n - 1`
+#' for counts before it. The impact is added after evaluating that event's intensity,
+#' only in columns selected by its type. The last event ends the likelihood window.
+#' Automatic initialization uses the existing `mu`/`alpha`/`beta` rule; the
+#' additional impact does not enter that rule.
+#'
+#' With `gradient = "analytic"`, `jacobian$impact` is a matrix or a function with
+#' the same observed context.
+#' Its `param` argument receives the full named optimization vector, whereas
+#' the impact function itself receives its local `param` vector as before.
+#' Rows follow `as.vector(impact(...))`; columns must include every fitted parameter
+#' name, with zeros for no effect. Return the total derivative of the impact matrix,
+#' including any dependence through `mu`, `alpha`, or `beta`. Contributions for
+#' shared names belong in the same column. This convention differs from the local
+#' Jacobians for parameter-only components. A Jacobian is required even when the
+#' impact has no local parameters; a parameter-independent impact has a zero matrix.
+#'
+#' Declare needed `N` and `Nc` arguments explicitly in the impact function, or
+#' supply these paths. Captured inputs must be fixed, and callbacks must be
+#' deterministic. Ignored `...` is allowed. Observed-only precomputation cannot
+#' read `lambda`, `lambda_component`, or `lambda_component_n`, including through
+#' `...`. Analytic current-component feedback requires the explicit declaration
+#' and state Jacobian described below. A callback
+#' that forces all of `...` also forces these unavailable states and produces an
+#' error. R evaluates impacts and Jacobians; Rcpp computes intensity recursions,
+#' component scores, and reverse sensitivities to event impacts. Temporary storage
+#' grows with observations times kernel components, without an additional
+#' observations-by-components-by-parameters array. Standalone `logLik()` also
+#' supports these observed-state callbacks without Jacobians. Default fitting uses
+#' C++ for supported callbacks with
+#' numerical differentiation and requires no Jacobian.
+#'
+#' With the C++ engine, `mu` may depend on observed
+#' `n`, `N`, `Nc`, `mark`, `type`, and `inter_arrival`. Return a plain numeric
+#' dimensions-by-one matrix, constant over each inter-event interval. The call
+#' at index `n` supplies the baseline for the interval ending at event `n` and
+#' that event's intensity; use counts at `n - 1` for its predictable baseline.
+#' Initial values use `mu(n = 1)`. Latent-intensity dependencies and within-interval
+#' changes are unsupported for these baselines. Ignored `...` is allowed.
+#'
+#' Numerical C++ fitting also supports an `impact` that explicitly declares
+#' `lambda_component_n`, `lambda`, or `lambda_component`. Rcpp calls it after
+#' computing the current event's intensity and before applying its jumps.
+#' `lambda_component_n` is the dimensions-by-kernels matrix just before the jump.
+#' `lambda` and `lambda_component` are allocated only when explicitly declared;
+#' they contain the initial and current pre-jump rows, with future rows zero.
+#' Component histories use the R engine's row-major column order and names.
+#' Retained callback arguments are snapshots. Prefer `lambda_component_n` when
+#' only the current state is needed. A full component history has storage
+#' proportional to events times dimensions times kernels. If callbacks retain
+#' history arguments, snapshot-preserving copies can make cumulative allocations
+#' grow quadratically with event count;
+#' this is separate from peak live memory. Current-state callbacks avoid this
+#' history cost. Numerical differentiation repeats it at each likelihood evaluation.
+#' Undeclared latent access through `...` does not select this sequential path.
+#' When `mu` is an observed-baseline function, the impact's `mu` argument is the
+#' parameter-bound function, as in the R engine. Callbacks must be deterministic
+#' and keep captured inputs fixed. Analytic gradients support current-component
+#' feedback with the derivatives below; full intensity histories require numerical
+#' differentiation.
+#'
+#' For an observed baseline with `gradient = "analytic"`, supply `jacobian$mu`
+#' as a matrix or function receiving the observed context. Its `param` is the
+#' full named optimization vector. Return a dimensions-by-parameters matrix
+#' with a column for every fitted parameter, including zero columns. Include
+#' dependencies through resolved `alpha` and `beta`. The baseline value function
+#' keeps its local parameter vector. The baseline Jacobian at `n = 1` also enters
+#' the derivative of automatic initialization. Declare needed `N` and `Nc` in
+#' the value function or supply their paths.
+#'
+#' An analytic impact that explicitly declares `lambda_component_n` requires
+#' `jacobian$impact = list(param = ..., state = ...)`. Each entry is a constant
+#' matrix or function receiving the same observed and current-component context.
+#' The Jacobians' `param` is the full named optimization vector. The `param`
+#' matrix has one row per impact entry and one named column per fitted parameter;
+#' differentiate the impact while holding `lambda_component_n` fixed, including
+#' direct dependencies through core components. The `state` matrix is square,
+#' with rows for impact entries and columns for current-component entries, both
+#' in `as.vector()` column-major order. It contains the partial derivative of
+#' the impact with respect to that pre-jump state. The package propagates state
+#' sensitivities through decay, event jumps, and initial components. Do not add
+#' those propagated effects again to the supplied `param` Jacobian.
+#' All Jacobians must be finite numeric matrices of constant dimensions.
+#' Derivatives must exist along the evaluated parameter path. Branches based
+#' only on observations are allowed; parameter-dependent discontinuities and
+#' arbitrary reads of `lambda` or `lambda_component` are unsupported.
+#' Current-state sensitivity storage grows with kernel components times fitted
+#' parameters. An observed baseline Jacobian path also grows with observations
+#' times dimensions times parameters. No derivative history of all kernel states
+#' is stored. Jacobians are evaluated only when a gradient is requested.
+#'
+#' The default uses numerical differentiation and does not run
+#' additional curvature checks. With `final_hessian = "stable"`, final curvature is
+#' checked after optimization without changing coefficients, log-likelihood,
+#' the stored optimizer gradient, return code, or iteration count.
+#' The stabilization selects difference steps and checks their consistency.
+#' If default numerical Hawkes standard errors contain `NaN`, a short message
+#' suggests this option.
+#'
+#' The requested stabilization compares information, inverse information, and
+#' standard errors across difference steps. Failed checks, singular or indefinite
+#' information, and equality or nearby inequality constraints yield `NA` covariance
+#' for free parameters. Fixed parameters retain zero covariance. Supplied Hessians
+#' are retained and checked for invertible positive information. No ridge or
+#' eigenvalue clipping is applied. Use [fit_diagnostics()] to inspect the reason.
+#' A numerically stable Hessian does not establish identifiability, stationarity,
+#' a global maximum, or correct confidence-interval coverage. Weak excitation,
+#' nearby kernel decay rates, short samples, boundary estimates, and nonsmooth
+#' callbacks can make Wald inference unreliable. Consider profile likelihood and
+#' a bootstrap that preserves the observation design and initial state.
+#'
+#' [fitted_hspec()] uses the saved parameter map to restore the estimated model.
+#' [fit_initial_state()] retrieves the observation window's initial-state arguments.
+#' These are suitable for re-evaluating the likelihood and starting a new simulation.
+#' Keep observations separately and supply them again for inference. The stored
+#' optimization objective can retain data in its function environment.
+#' Save the fit with `saveRDS()` to retain its model, parameter map, and initial-state information.
 #'
 #' @docType methods
 #' @rdname hfit
 #' @export
 #'
-#' @seealso \code{\link{hspec-class}}, \code{\link{hsim,hspec-method}}
+#' @seealso [fit_diagnostics()], [fitted_hspec()], [fit_initial_state()], [logLik()],
+#' \code{\link{hspec-class}}, \code{\link{hsim,hspec-method}}
 #'
-#' @examples
+#' @examplesIf requireNamespace("maxLik", quietly = TRUE)
 #'
 #' # example 1
 #' mu <- c(0.1, 0.1)
@@ -50,8 +324,46 @@ NULL
 #' beta <- matrix(c(0.9, 0.9, 0.9, 0.9), nrow=2, byrow=TRUE)
 #' h <- new("hspec", mu=mu, alpha=alpha, beta=beta)
 #' res <- hsim(h, size=100)
-#' summary(hfit(h, inter_arrival=res$inter_arrival, type=res$type))
+#' fit <- hfit(h, inter_arrival = res$inter_arrival, type = res$type)
+#' summary(fit)
+#' # Optional Rcpp gradient for this numeric specification:
+#' # hfit(h, res$inter_arrival, res$type, gradient = "analytic")
+#' fit_diagnostics(fit)$status
+#' estimated <- fitted_hspec(fit)
+#' initial <- fit_initial_state(fit)
+#' inferred <- do.call(logLik, c(list(object = estimated,
+#'   inter_arrival = res$inter_arrival, type = res$type, infer = TRUE), initial))
+#' c(fitted = as.numeric(logLik(fit)), restored = inferred$loglikelihood)
 #'
+#'
+#' # A parameter-only function can keep selected entries fixed at zero.
+#' alpha_fun <- function(param = c(a = 0.2, b = 0.1)) {
+#'   matrix(c(param["a"], 0, param["b"], param["a"]), 2)
+#' }
+#' alpha_jac <- cbind(a = c(1, 0, 0, 1), b = c(0, 0, 1, 0))
+#' h_fun <- new("hspec", mu = mu, alpha = alpha_fun, beta = beta)
+#' # hfit(h_fun, res$inter_arrival, res$type, gradient = "analytic",
+#' #      jacobian = list(alpha = alpha_jac))
+#'
+#' # Default auto selects C++ with numerical differentiation; no Jacobian:
+#' # fit_fun <- hfit(h_fun, res$inter_arrival, res$type)
+#'
+#' # Observed counts can change the excitation after an event.
+#' count_impact <- function(param = c(a = 0.2), n, N, ...) {
+#'   matrix(param["a"] * (1 + 0.2 * (N[n, 1] %% 2)))
+#' }
+#' count_jac <- function(param, n, N, ...) {
+#'   out <- matrix(0, 1, length(param), dimnames = list(NULL, names(param)))
+#'   out[, "a"] <- 1 + 0.2 * (N[n, 1] %% 2)
+#'   out
+#' }
+#' h_count <- new("hspec", mu = 0.3,
+#'   alpha = function(param = numeric(0)) matrix(0), beta = 1.2,
+#'   impact = count_impact)
+#' # hfit(h_count, inter_arrival, gradient = "analytic",
+#' #      jacobian = list(impact = count_jac))
+#' # Or keep numerical differentiation without a Jacobian:
+#' # hfit(h_count, inter_arrival)
 #'
 #' # example 2
 #' \donttest{
@@ -118,11 +430,15 @@ NULL
 setGeneric("hfit", function(object, inter_arrival = NULL,
                             type = NULL, mark = NULL,
                             N = NULL, Nc = NULL,
-                            lambda_component0 = NULL, N0 = NULL,
+                            lambda_component0 = "auto", N0 = NULL,
                             mylogLik = NULL,
                             reduced = TRUE,
-                            grad = NULL, hess = NULL, constraint = NULL, method = "BFGS",
-                            verbose = FALSE, ...) standardGeneric("hfit"))
+                            grad = NULL, hess = NULL, constraints = NULL, method = "BFGS",
+                            verbose = FALSE, ..., Nc0 = NULL,
+                            final_hessian = c("maxLik", "stable", "optimizer"),
+                            gradient = c("numeric", "analytic"), jacobian = NULL,
+                            constraint = NULL,
+                            optimizer = c("maxLik", "stats")) standardGeneric("hfit"))
 
 #' @rdname hfit
 setMethod(
@@ -131,67 +447,77 @@ setMethod(
   function(object, inter_arrival = NULL,
            type = NULL, mark = NULL,
            N = NULL, Nc = NULL,
-           lambda_component0 = NULL, N0 = NULL,
+           lambda_component0 = "auto", N0 = NULL,
            mylogLik = NULL,
            reduced = TRUE,
-           grad = NULL, hess = NULL, constraint = NULL, method = "BFGS",
-           verbose = FALSE, ...){
+           grad = NULL, hess = NULL, constraints = NULL, method = "BFGS",
+           verbose = FALSE, ..., Nc0 = NULL,
+           final_hessian = c("maxLik", "stable", "optimizer"),
+           gradient = c("numeric", "analytic"), jacobian = NULL,
+           constraint = NULL,
+           optimizer = c("maxLik", "stats")){
 
+    optimizer <- match.arg(optimizer)
+    if (optimizer == "maxLik" && !requireNamespace("maxLik", quietly = TRUE))
+      stop("optimizer = 'maxLik' requires the optional maxLik package. Install it or use optimizer = 'stats'.", call. = FALSE)
+    if (optimizer == "stats" && missing(final_hessian)) final_hessian <- "stable"
+    final_hessian <- match.arg(final_hessian)
+    if (optimizer == "stats" && final_hessian == "maxLik")
+      stop("Use final_hessian = 'stable' or 'optimizer' with optimizer = 'stats'.", call. = FALSE)
+    gradient <- match.arg(gradient)
     additional_argument <- list(...)
     if ("lambda0" %in% names(additional_argument)) {
 
-      warning("lambda0 is deprecated; instead use lambda_component0")
+      warning("'lambda0' is deprecated; use 'lambda_component0' instead.", call. = FALSE)
 
       lambda_component0 <- additional_argument[["lambda0"]]
+      additional_argument[["lambda0"]] <- NULL
 
     }
 
-    if(verbose == TRUE && is.null(lambda_component0)){
-      message("Initial values for intensity processes were not provided.
-              Using internally determined default values for estimation.\n")
+    # legacy argument 泥섎━
+    if (!is.null(constraint)) {
+
+      if (!is.null(constraints)) {
+        stop("Supply a non-NULL value through only one of 'constraint' or 'constraints'.", call. = FALSE)
+      }
+
+      constraints <- constraint
     }
 
 
-    # Define mapping from slot name to prefix
-    param_prefix <- list(
-      mu = "mu",
-      alpha = "alpha",
-      beta = "beta",
-      eta = "eta",
-      impact = "",
-      dmark = "",
-      dresidual = "",
-      presidual = "",
-      qresidual = ""
-    )
-
-
-    # Extract each parameter group from the hspec object
-    param_list <- lapply(names(param_prefix), function(slot_name) {
-      prefix <- param_prefix[[slot_name]]
-      slot_value <- slot(object, slot_name)
-      as.param(slot_value, prefix = prefix, reduced = reduced)
-    })
-
-
-    # Extract parameter names for each group
-    param_names <- lapply(param_list, names)
-
-    # Create a list to store names for lookup during initialization
-    names_list <- stats::setNames(vector("list", length(param_prefix)), names(param_prefix))
-    for (slot in names(param_prefix)) {
-      idx <- match(slot, names(param_prefix))
-      names_list[[slot]] <- param_names[[idx]]
+    parameter_map <- build_parameter_map(object, reduced)
+    starting_point <- parameter_map$start
+    callbacks <- if (is.null(mylogLik)) model_callback_plans(object) else NULL
+    if (is.null(inter_arrival) && !is.null(mylogLik)) {
+      # Custom objectives need not use event observations.
+      observation <- list(inter_arrival = inter_arrival, type = type, mark = mark,
+                          N = N, Nc = Nc, N0 = N0, Nc0 = Nc0)
+    } else {
+      observation <- normalize_observation(object, inter_arrival, type, mark, N, Nc, N0, Nc0,
+                                           needs = required_count_paths(object, mylogLik))
+    }
+    kernel_cols <- ncol(eval_param(object@beta))
+    initialization <- NULL
+    if (is.null(mylogLik)) {
+      initialization <- select_hawkes_initial(object, lambda_component0, kernel_cols)
+      lambda_component0 <- initialization$value
+    } else {
+      if (identical(lambda_component0, "auto")) lambda_component0 <- NULL
+      lambda_component0 <- normalize_lambda_initial(lambda_component0, object@dimens, kernel_cols)
+    }
+    custom_plan <- callback_plan(mylogLik,
+      c("object", names(observation), "lambda_component0", "param", "reduced"), "mylogLik")
+    if (!is.null(mylogLik) && (!is.function(mylogLik) || !("object" %in% names(formals(mylogLik))))) {
+      stop("mylogLik must be a function with an 'object' argument.")
     }
 
 
-    # Flatten all parameters into a named numeric vector
-    input_parameters <- unlist(param_list, recursive = FALSE, use.names = TRUE)
 
-    # Rule: Parameters with the same name are treated as identical
-    starting_point <- input_parameters[unique(names(input_parameters))]
-
-
+    execution <- new.env(parent = emptyenv())
+    execution$used <- character(0)
+    execution$fallback_reason <- NULL
+    execution$gradient_attribute <- execution$hessian_attribute <- FALSE
 
     # Log-likelihood function passed to maxLik
     llh_function <- function(param){
@@ -202,13 +528,19 @@ setMethod(
       # Reconstruct hspec0 for likelihood function with given param
       # object is defined in the bounding environment, i.e., hfit
 
-      init_values <- lapply(names(param_prefix), function(slot_name) {
-        initialize_slot(slot(object, slot_name), param[names_list[[slot_name]]],
-                        param_name = slot_name, object@dimens, reduced)
-      })
-
-      names(init_values) <- paste0(names(param_prefix), "0")
+      init_values <- restore_parameters(parameter_map, param)
+      names(init_values) <- paste0(names(init_values), "0")
       list2env(init_values, envir = environment())
+
+      # Invalid optimizer proposals must not become constructor errors.
+      beta_values <- eval_param(beta0)
+      if (!is.function(beta_values) &&
+          (any(!is.finite(beta_values)) || any(beta_values <= 0))) return(-Inf)
+      for (value in list(eval_param(mu0), eval_param(alpha0), eval_param(eta0))) {
+        if (!is.function(value) && any(!is.finite(value))) return(-Inf)
+      }
+      mu_values <- eval_param(mu0)
+      if (!is.function(mu_values) && any(mu_values < 0)) return(-Inf)
 
 
       # hspec for logLik
@@ -219,27 +551,20 @@ setMethod(
 
 
       if (is.null(mylogLik)){
-
-        logl <- logLik(hspec0, inter_arrival = inter_arrival, type = type,
-                       mark = mark, N = N, Nc = Nc, N0 = N0,
-                       lambda_component0 = lambda_component0,
-                       showWarning = FALSE)
+        if (is.null(lambda_component0) && is.null(hawkes_mean_state(
+          list(mu = hspec0@mu, alpha = hspec0@alpha, beta = hspec0@beta), object@type_col_map))) return(-Inf)
+        logl <- loglik_hspec(hspec0, observation, lambda_component0,
+                            callbacks = callbacks, show_initial_message = FALSE, execution = execution,
+                            replay = FALSE)
 
       } else {
 
-        # arguments names for mylogLik
-        args_needed <- names(formals(mylogLik))
-        if ( !("object" %in% args_needed)) {
-          stop('mylogLik needs \'object\' arguments with hspec')
-        }
-        args_logLik <- vector("list", length(args_needed))
-        for (i in seq_along(args_needed)){
-          # find necessary object for mylogLik arguments
-          if(args_needed[i] == "object") args_logLik[[i]] <- hspec0
-          else args_logLik[[i]] <- get(args_needed[i])
-        }
-        names(args_logLik) <- args_needed
-        logl <- do.call(mylogLik, args = args_logLik)
+        context <- c(list(object = hspec0), observation,
+                     list(lambda_component0 = lambda_component0, param = param, reduced = reduced))
+        record_fit_engine(execution, "custom")
+        logl <- call_component(mylogLik, custom_plan, context)
+        if (!is.null(attr(logl, "gradient", exact = TRUE))) execution$gradient_attribute <- TRUE
+        if (!is.null(attr(logl, "hessian", exact = TRUE))) execution$hessian_attribute <- TRUE
       }
 
       if(verbose){
@@ -252,9 +577,152 @@ setMethod(
     }
 
 
+    gradient_used <- if (!is.null(grad)) "user" else gradient
+    curvature_objective <- NULL
+    engine <- if (is.null(mylogLik)) {
+      match.arg(getOption("emhawkes.engine", "auto"), c("auto", "r", "cpp"))
+    } else NULL
+    execution$requested <- engine
+    if (identical(gradient_used, "analytic")) {
+      if (!is.null(mylogLik)) stop("Analytic gradient does not support a custom likelihood.")
+      if (!is.null(constraints$eqA) || !is.null(constraints$eqB)) {
+        stop('Analytic gradient does not support equality constraints; use gradient = "numeric".')
+      }
+      if (engine == "r") stop('Analytic gradient requires the C++ engine; use emhawkes.engine = "auto" or "cpp".')
+      if (identical(toupper(method), "BHHH") || isTRUE(additional_argument$bhhhHessian) ||
+          identical(toupper(as.character(additional_argument$finalHessian)), "BHHH")) {
+        stop("Analytic gradient supplies a total score, not the event scores required by BHHH.")
+      }
+      objective <- make_hawkes_objective(object, observation, lambda_component0, parameter_map, verbose, jacobian, execution = execution)
+      llh_function <- objective$loglik
+      grad <- objective$gradient
+      curvature_objective <- objective
+    } else if (!is.null(engine) && engine %in% c("auto", "cpp") && (!is.null(object@impact) || any(vapply(
+      list(object@mu, object@alpha, object@beta, object@eta), is.function, logical(1))))) {
+      # Reuse native recursions without scores or component Jacobians.
+      # Numerical differentiation and supplied grad/hess remain with maxLik.
+      if (engine == "cpp") {
+        objective <- make_hawkes_objective(object, observation, lambda_component0,
+          parameter_map, verbose, derivatives = FALSE, execution = execution)
+        llh_function <- objective$loglik
+      } else {
+        execution$fallback_reason <- auto_hawkes_fit_reason(object, observation)
+        objective <- if (is.null(execution$fallback_reason)) tryCatch(make_hawkes_objective(object, observation, lambda_component0,
+          parameter_map, verbose, derivatives = FALSE, execution = execution),
+          emhawkes_cpp_unsupported = function(e) {
+            execution$fallback_reason <- conditionMessage(e)
+            NULL
+          }) else NULL
+        if (!is.null(objective)) {
+          r_likelihood <- llh_function
+          native_available <- TRUE
+          llh_function <- function(param) {
+            if (!native_available) return(r_likelihood(param))
+            tryCatch(objective$loglik(param),
+              emhawkes_cpp_unsupported = function(e) {
+                # Some callback capabilities can only be detected on use.
+                # Stay on R for all subsequent proposals in this fit.
+                native_available <<- FALSE
+                execution$fallback_reason <- conditionMessage(e)
+                r_likelihood(param)
+              })
+          }
+        }
+      }
+    }
+
     #llh_function(starting_point)
-    maxLik::maxLik(logLik=llh_function,
-                   start=starting_point, grad, hess, method = method, constraint = constraint, ...)
+    #maxLik::maxLik(logLik=llh_function,
+    #               start=starting_point, grad, hess, method = method, constraints = constraints, ...)
+
+    ml_args <- c(
+      list(
+        logLik = llh_function,
+        start  = starting_point,
+        grad   = grad,
+        hess   = hess,
+        method = method,
+        constraints = constraints
+      ),
+      additional_argument
+    )
+
+    # maxOptim computes this Hessian only after optimization. Stable curvature
+    # replaces it, so omit that pass unless the caller explicitly requested it.
+    # Honor maxLik's partial argument matching for explicit overrides too.
+    # Keep Newton methods and constrained or non-Hawkes fits unchanged.
+    skip_final_hessian <- optimizer == "maxLik" && identical(final_hessian, "stable") &&
+      is.null(mylogLik) && is.null(object@dresidual) && is.null(constraints) &&
+      is.null(hess) &&
+      !any(startsWith("finalHessian", as.character(names(additional_argument)))) &&
+      !isTRUE(additional_argument$bhhhHessian) &&
+      tolower(method) %in% c("bfgs", "cg", "conjugate-gradient", "nm", "nelder-mead", "sann")
+    if (skip_final_hessian) ml_args$finalHessian <- FALSE
+
+    if (is.null(mylogLik)) message_hawkes_initial(initialization)
+    message_parameter_sharing(parameter_map)
+    fit <- if (optimizer == "maxLik") do.call(maxLik::maxLik, ml_args) else
+      run_stats_fit(llh_function, starting_point, grad, hess, constraints, method,
+        additional_argument, stable = final_hessian == "stable" &&
+          is.null(mylogLik) && is.null(object@dresidual))
+    if (!is.null(fit)) {
+      final <- if (is.null(mylogLik)) {
+        finalize_hawkes_fit(fit, object,
+                           if (optimizer == "stats") fit$curvature_constraints else constraints,
+                           hess, additional_argument,
+                           method, final_hessian,
+                           score_factory = if (engine %in% c("auto", "cpp") &&
+                             is.null(execution$fallback_reason) &&
+                             is.null(constraints$eqA) && is.null(constraints$eqB)) function() {
+                               if (!is.null(curvature_objective)) return(curvature_objective)
+                               make_hawkes_objective(object, observation, lambda_component0,
+                                 parameter_map, FALSE, jacobian, execution = execution)
+                             } else NULL)
+      } else {
+        list(fit = fit, diagnostics = list(status = "not_checked", reason = "custom_likelihood"))
+      }
+      fit <- final$fit
+      if (optimizer == "stats") {
+        final$diagnostics$optimizer_code <- fit$code
+        final$diagnostics$optimizer_message <- fit$message
+        final$diagnostics$optimizer_success <- fit$code == 0L
+        if (fit$code != 0L && !"optimizer_not_converged" %in% final$diagnostics$warnings) {
+          final$diagnostics$warnings <- c(final$diagnostics$warnings, "optimizer_not_converged")
+          warning("The stats optimizer did not report normal convergence (code ", fit$code,
+                  "). See fit_diagnostics().", call. = FALSE)
+        }
+      }
+      final$diagnostics$computation <- fit_computation(fit, execution, gradient,
+        gradient_used, final_hessian, hess, additional_argument, final$diagnostics,
+        maxLik_hessian_skipped = skip_final_hessian)
+      final$diagnostics$computation$optimizer <- list(requested = optimizer,
+        used = if (optimizer == "stats") fit$optimizer else "maxLik", method = method)
+      if (!is.null(initialization)) {
+        initialization$components <- if (initialization$used == "mean") {
+          values <- restore_parameters(parameter_map, stats::coef(fit))
+          state <- hawkes_mean_state(values, object@type_col_map)
+          state$value
+        } else initialization$value
+        final$diagnostics$initialization <- initialization[c("requested", "used", "reason", "components")]
+      }
+      attr(fit, "emhawkes") <- list(
+        version = 1L,
+        specification = object,
+        parameter_map = parameter_map,
+        initialization = initialization,
+        initial_state = list(lambda_component0 = if (!is.null(initialization) && initialization$used == "mean") "mean" else lambda_component0,
+                             N0 = observation$N0, Nc0 = observation$Nc0),
+        reduced = reduced,
+        gradient = gradient_used,
+        jacobian = if (gradient_used == "analytic" || final_hessian == "stable") jacobian else NULL,
+        custom_loglik = !is.null(mylogLik),
+        constraints = constraints,
+        optimizer = optimizer,
+        diagnostics = final$diagnostics
+      )
+    }
+    fit
+
 
   }
 )

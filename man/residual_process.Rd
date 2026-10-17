@@ -2,7 +2,7 @@
 % Please edit documentation in R/hgfit.R
 \name{residual_process}
 \alias{residual_process}
-\title{Compute residual process}
+\title{Compute a Residual Process (Deprecated)}
 \usage{
 residual_process(
   component,
@@ -41,15 +41,26 @@ residual_process(
 
 \item{Nc}{A matrix of counting processes weighted by mark.}
 
-\item{lambda_component0}{The initial values of lambda component. Must have the same dimensional matrix with \code{hspec}.}
+\item{lambda_component0}{Initial intensity components, excluding the baseline
+\code{mu}. Must have the same matrix dimensions as the model's kernel parameters.}
 
 \item{N0}{The initial value of N}
 
 \item{...}{Further arguments passed to or from other methods.}
 }
+\value{
+A numeric vector of residual intervals for the selected event type.
+}
 \description{
-Using random time change, this function compute the residual process, which is the inter-arrival time of a standard Poisson process.
-Therefore, the return values should follow the exponential distribution with rate 1, if model and rambda are correctly specified.
+Legacy helper that integrates a supplied intensity path for one event type.
+Use \code{\link[=logLik]{logLik()}} with \code{infer = TRUE} to compute intensities and residuals together.
+For a correctly specified Hawkes model, residual intervals have a unit-exponential distribution.
+}
+\details{
+This function is deprecated. The replacement \code{logLik()} returns residuals in
+\code{res_process1}, ..., \code{res_processD} and handles types with fewer than two events
+by returning empty vectors. For fitted parameters, first use \code{\link[=fitted_hspec]{fitted_hspec()}}
+and preserve initialization with \code{\link[=fit_initial_state]{fit_initial_state()}}.
 }
 \examples{
 
@@ -58,6 +69,11 @@ alpha <- matrix(c(0.2, 0.1, 0.1, 0.2), nrow=2, byrow=TRUE)
 beta <- matrix(c(0.9, 0.9, 0.9, 0.9), nrow=2, byrow=TRUE)
 h <- new("hspec", mu=mu, alpha=alpha, beta=beta)
 res <- hsim(h, size=1000)
-rp <- residual_process(component = 1, res$inter_arrival, res$type, res$rambda_component, mu, beta)
+inferred <- logLik(h, inter_arrival = res$inter_arrival,
+                   type = res$type, infer = TRUE)
+rp <- inferred$res_process1
 
+}
+\seealso{
+\code{\link[=logLik]{logLik()}}, \code{\link[=fitted_hspec]{fitted_hspec()}}, \code{\link[=fit_initial_state]{fit_initial_state()}}
 }

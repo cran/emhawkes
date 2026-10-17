@@ -13,16 +13,22 @@ hfit(
   mark = NULL,
   N = NULL,
   Nc = NULL,
-  lambda_component0 = NULL,
+  lambda_component0 = "auto",
   N0 = NULL,
   mylogLik = NULL,
   reduced = TRUE,
   grad = NULL,
   hess = NULL,
-  constraint = NULL,
+  constraints = NULL,
   method = "BFGS",
   verbose = FALSE,
-  ...
+  ...,
+  Nc0 = NULL,
+  final_hessian = c("maxLik", "stable", "optimizer"),
+  gradient = c("numeric", "analytic"),
+  jacobian = NULL,
+  constraint = NULL,
+  optimizer = c("maxLik", "stats")
 )
 
 \S4method{hfit}{hspec}(
@@ -32,16 +38,22 @@ hfit(
   mark = NULL,
   N = NULL,
   Nc = NULL,
-  lambda_component0 = NULL,
+  lambda_component0 = "auto",
   N0 = NULL,
   mylogLik = NULL,
   reduced = TRUE,
   grad = NULL,
   hess = NULL,
-  constraint = NULL,
+  constraints = NULL,
   method = "BFGS",
   verbose = FALSE,
-  ...
+  ...,
+  Nc0 = NULL,
+  final_hessian = c("maxLik", "stable", "optimizer"),
+  gradient = c("numeric", "analytic"),
+  jacobian = NULL,
+  constraint = NULL,
+  optimizer = c("maxLik", "stats")
 )
 }
 \arguments{
@@ -53,50 +65,329 @@ hfit(
 
 \item{mark}{A vector of mark (jump) sizes, starting with zero.}
 
-\item{N}{A matrix representing counting processes.}
+\item{N}{Optional cumulative event-count matrix, with one row per input row
+and one column per event type. Each row contains counts after that event.}
 
-\item{Nc}{A matrix of counting processes weighted by mark sizes.}
+\item{Nc}{Optional cumulative mark-total matrix with the same shape as \code{N}.}
 
-\item{lambda_component0}{Initial values for the lambda component \eqn{\lambda_{ij}}.
-Can be a numeric value or a matrix.
-Must have the same number of rows and columns as \code{alpha} or \code{beta} in \code{object}.}
+\item{lambda_component0}{Initial intensity components \eqn{\lambda_{ij}(0)},
+excluding the baseline \code{mu}.
+A finite scalar is expanded to every kernel component. A matrix must match
+the shape of \code{alpha} and \code{beta}. For the built-in likelihood, \code{"auto"}
+(also \code{NULL}) selects unconditional component means for supported stable
+constant numeric linear models, and zero otherwise. \code{"mean"} requires supported
+finite means; \code{"zero"} fixes zero components. Selection is reported once
+and held throughout optimization. Mean values vary with fitted parameters;
+invalid mean proposals have likelihood \code{-Inf}, without switching to zero.
+For \code{mylogLik}, \code{"auto"} passes \code{NULL} without automatic initialization.
+Mean initialization excludes nonzero \code{eta}, impact callbacks and custom
+residual distributions. Function-valued core parameters use zero in \code{"auto"}.}
 
-\item{N0}{Initial values for the counting processes matrix \code{N}.}
+\item{N0}{Initial event counts: a finite scalar or one value per event type.
+If omitted, use the first row of supplied \code{N}, or zero when \code{N} is absent.}
 
 \item{mylogLik}{A user-defined log-likelihood function, which must accept an \code{object} argument consistent with \code{object}.}
 
-\item{reduced}{Logical; if \code{TRUE}, performs reduced estimation.}
+\item{reduced}{Logical; if \code{TRUE}, equal entries within each parameter matrix
+share one parameter. If \code{FALSE}, each matrix entry is estimated separately.
+Function components share parameters by name. Conflicting starting values for
+a shared name produce a warning; the first value is used.}
 
-\item{grad}{A gradient matrix for the likelihood function. Refer to \code{\link[maxLik]{maxLik}} for more details.}
+\item{grad}{Optional gradient function passed to \code{\link[maxLik:maxLik]{maxLik::maxLik()}}. Its first
+argument is the optimization parameter vector. Takes precedence over \code{gradient}.}
 
-\item{hess}{A Hessian matrix for the likelihood function. Refer to \code{\link[maxLik]{maxLik}} for more details.}
+\item{hess}{Optional Hessian function passed to \code{\link[maxLik:maxLik]{maxLik::maxLik()}}. Its first
+argument is the optimization parameter vector. If \code{NULL}, use numerical differentiation.}
 
-\item{constraint}{Constraint matrices. Refer to \code{\link[maxLik]{maxLik}} for more details.}
+\item{constraints}{\code{NULL} or a constraint list passed to \code{\link[maxLik:maxLik]{maxLik::maxLik()}}.
+\code{constraint} is an equivalent named-only alias. Supply a non-\code{NULL} value
+through only one of these arguments.}
 
 \item{method}{The optimization method to be used. Refer to \code{\link[maxLik]{maxLik}} for more details.}
 
 \item{verbose}{Logical; if \code{TRUE}, prints the progress of the estimation process.}
 
 \item{...}{Additional parameters for optimization. Refer to \code{\link[maxLik]{maxLik}} for more details.}
+
+\item{Nc0}{Initial mark totals: a finite scalar or one value per event type.
+If omitted, use the first row of supplied \code{Nc}, or zero when \code{Nc} is absent.
+This argument must be named.}
+
+\item{final_hessian}{Named-only choice, \code{"maxLik"}, \code{"stable"} or \code{"optimizer"}.
+The default is \code{"maxLik"} with the maxLik provider and \code{"stable"} with stats.
+\code{"optimizer"} retains the selected provider's final Hessian; \code{"maxLik"} is
+accepted only with the maxLik provider.
+The default retains the final Hessian and covariance calculation from \code{maxLik}.
+Request \code{"stable"} to recalculate numerical final curvature for the built-in
+Hawkes likelihood using scaled central differences and Richardson extrapolation.
+With the \code{"auto"} or \code{"cpp"} engine, use the built-in analytic score when
+supported and supplied with any required \code{jacobian}, independently of the
+optimizer's \code{gradient} choice. Otherwise use likelihood differences. The
+\code{"r"} engine retains likelihood differences. Failed score evaluations also
+fall back to likelihood differences; inspect \code{fit_diagnostics()} for the reason.
+For unconstrained BFGS, CG, Nelder-Mead, and SANN fits without supplied \code{hess}
+or an explicit \code{finalHessian} override, skip maxLik's separate final Hessian.
+Set \code{finalHessian = TRUE} to retain that extra calculation. Newton methods
+and constrained fits retain it. Inspect \code{fit_diagnostics()} for the recorded choice.
+User-supplied \code{hess}, \code{finalHessian = FALSE}, BHHH curvature, custom likelihoods,
+and residual-distribution likelihoods retain their calculation choices.}
+
+\item{gradient}{Named-only choice, \code{"numeric"} (default) or \code{"analytic"}.
+Request \code{"analytic"} for the Rcpp score of a Hawkes specification.
+Parameter-only functions require component derivatives through \code{jacobian}.
+Supports shared and fixed parameters, numeric mark effects, multi-kernel mappings,
+and explicit or differentiable automatic initial states. Requires the \code{"auto"}
+or \code{"cpp"} engine. Unsupported specifications produce an error.}
+
+\item{jacobian}{Named-only list of derivatives for parameter-only \code{mu}, \code{alpha},
+\code{beta}, and \code{eta} functions for analytic gradients. Each entry is a numeric
+matrix or a function with the single argument \code{param} returning that matrix.
+Rows follow \code{as.vector()} of the component matrix (column-major order); columns
+are named with the component's local \code{param} names. Column order is arbitrary.
+Required for each function with nonempty \code{param}. For an observed-state \code{impact},
+also supply \code{jacobian$impact}. Observed baselines use a full-parameter
+\code{jacobian$mu}; current-state feedback uses parameter and state Jacobians.
+See Details for these conventions.
+Also used by \code{final_hessian = "stable"} when optimization uses numerical
+differentiation or a supplied \code{grad}; otherwise unused with those choices.}
+
+\item{constraint}{Named-only alias for \code{constraints}, accepted without a warning.}
+
+\item{optimizer}{Named-only optimizer provider. \code{"maxLik"} (default) requires
+the optional maxLik package. \code{"stats"} directly uses R's \code{\link[stats:optim]{stats::optim()}} or,
+for linear inequalities, \code{\link[stats:constrOptim]{stats::constrOptim()}}. It works without maxLik.}
 }
 \value{
-\code{\link[maxLik]{maxLik}} object
+With \code{optimizer = "maxLik"}, a \code{\link[maxLik]{maxLik}} object;
+with \code{optimizer = "stats"}, an \code{emhawkes_stats_fit} supporting \code{coef()},
+\code{logLik()}, \code{vcov()}, \code{summary()} and \code{print()}. Both have an \code{emhawkes} attribute
+containing the original specification, parameter map, normalized initial-state
+arguments, constraints, \code{reduced} setting, supplied analytic Jacobians, and final
+curvature diagnostics and recorded calculation methods.
+Use \code{\link[=fit_diagnostics]{fit_diagnostics()}} to inspect the methods and checks and \code{\link[=fitted_hspec]{fitted_hspec()}} to restore the estimated
+specification and \code{\link[=fit_initial_state]{fit_initial_state()}} to retrieve its initial-state arguments.
 }
 \description{
-This is a generic function named \code{hfit} designed for estimating the parameters
-of the exponential Hawkes model. It is implemented as an S4 method for two main reasons:
+Estimate exponential Hawkes model parameters by maximum likelihood.
+The supplied \code{\link{hspec-class}} object defines the model and the starting
+values for optimization with \code{\link[maxLik]{maxLik}} or R's stats functions.
 }
 \details{
-Model Representation: To represent the structure of the model as an \code{hspec} object.
-The multivariate marked Hawkes model has numerous variations, and using an S4 class
-allows for a flexible and structured approach.
+Optimizer selection is independent of \code{emhawkes.engine}. The stats provider
+supports \code{BFGS}, \code{Nelder-Mead}, \code{CG} and \code{L-BFGS-B}. Linear inequalities
+(\code{ineqA \%*\% param + ineqB >= 0}) use \code{constrOptim()} with BFGS or Nelder-Mead;
+the start must be strictly inside every inequality involving free parameters.
+Equality constraints and maxLik-only methods are rejected. Both constraint
+spellings have the same meaning. Fixed parameters may be specified by a full
+logical vector, positions or names; constraints are reduced accordingly.
 
-Optimization Initialization: To provide a starting point for numerical optimization.
-The parameter values assigned to the \code{hspec} slots serve as initial values for the optimization process.
+With stats, \code{...} accepts \code{fixed}, \code{control}, \code{finalHessian}, \code{lower}, \code{upper},
+\code{outer.iterations} and \code{outer.eps}. Use \code{control = list(maxit = 500)} rather
+than maxLik's \code{iterlim}. \code{control$parscale} and \code{control$ndeps} refer to free
+parameters. Bounds are scalars or full-parameter vectors, require L-BFGS-B,
+and cannot be combined with linear constraints. L-BFGS-B requires finite
+likelihoods throughout the search. Unsupported arguments are errors.
 
-This function utilizes the \code{\link[maxLik]{maxLik}} package for optimization.
+Stats results retain convergence codes and evaluation counts from R. Explicit
+derivatives take precedence over likelihood derivative attributes. Numerical
+final curvature uses \code{optimHess()}; stable curvature reuses the same checks
+as maxLik fits. Near a constraint boundary, Wald covariance is unavailable.
+Different optimizers and stopping rules need not give identical estimates.
+The default maxLik path and its result classes are preserved; there is no
+automatic retry with another provider. Without maxLik installed, select
+\code{optimizer = "stats"} explicitly. Saved stats fits remain usable without it.
+
+Observations are checked once before optimization. The first row is the initial
+state, and supplied counting processes contain values after each event.
+Omit \code{type} for a univariate model and \code{mark} for unit marks. The observation
+vectors have the same length. The likelihood ends at the last supplied event.
+
+Functions with a \code{param} argument must provide a default named numeric vector;
+\code{numeric(0)} and functions without \code{param} are allowed for fixed components.
+A custom \code{mylogLik} receives its declared arguments from \code{object}, the observation
+arguments, \code{lambda_component0}, \code{param}, and \code{reduced}. Optional defaults are
+preserved; \code{...} receives the remaining context. Additional inputs should be
+captured in the function's environment or given defaults.
+
+When equal matrix entries are grouped, a message lists the affected components
+once before optimization. Use \code{suppressMessages(hfit(...))} to hide it.
+Setting \code{reduced = FALSE} separates matrix entries; function parameters still
+share values by name. A numeric zero is a starting value, not a fixed zero.
+To fix entries at zero, use a component function with constants at those positions.
+To hold optimization parameters at their starting values, pass \code{fixed} through
+\code{...} as described by \code{\link[maxLik:maxLik]{maxLik::maxLik()}}. Fixing a shared parameter fixes all
+entries that use it.
+
+The built-in likelihood uses the calculation engine selected by
+\code{options(emhawkes.engine = "auto")} by default. It selects C++ for supported
+numeric and callback models described below, and R otherwise. Setting \code{"r"}
+forces the R likelihood for comparison or troubleshooting. Setting \code{"cpp"}
+requires C++ support and errors on unsupported models; it is not needed for
+automatic acceleration. Inspect \code{fit_diagnostics(fit)$computation$engine}
+for actual engines and fallback reasons. A custom \code{mylogLik} bypasses this
+selection. Standalone \code{\link[=logLik]{logLik()}} supports fewer C++ models than \code{hfit()}.
+With \code{gradient = "analytic"}, Rcpp computes the likelihood and its gradient
+using native recursions and cached results at the same parameter vector. Matrix scores are
+summed according to the saved parameter map. Mean initial states include
+their parameter derivatives; zero and explicit initial components are fixed.
+Observed baselines and current-component impacts
+are supported with Jacobians as described below. Full intensity histories,
+mark densities, residual distributions, and custom likelihoods are not supported
+by this option. Equality-constrained optimization is also excluded.
+BHHH requires event scores and cannot use this total score.
+A supplied \code{grad} takes precedence. A supplied \code{hess} is retained; otherwise
+\code{maxLik} can calculate curvature by differentiating the analytic gradient.
+Optimization paths and last digits can differ from numerical differentiation.
+
+Analytic function components must have the single argument \code{param} and return
+plain numeric matrices with constant dimensions. Their values and Jacobians
+must be deterministic, differentiable functions of \code{param}; captured constants
+must remain fixed. Supply exact derivatives in \code{jacobian}; the package does not
+automatically differentiate function bodies or verify the supplied formulas.
+Fixed entries have zero derivative. Components with \code{param = numeric(0)} need
+no Jacobian. Contributions for shared parameter names are added across components.
+With \code{gradient = "analytic"}, missing or malformed Jacobians produce an error.
+For these functions, the
+analytic option evaluates their matrices in R and the likelihood and component
+scores in Rcpp. The default \code{emhawkes.engine = "auto"} also selects C++ for
+supported function-valued models with numerical differentiation. No Jacobian
+is required. Unsupported specifications use R; \code{"cpp"} requires C++ support,
+and \code{"r"} selects the R likelihood. User callback errors propagate.
+This option supports parameter-only \code{mu}, \code{alpha}, \code{beta}, and \code{eta} functions
+returning plain numeric matrices with constant dimensions. They must be
+deterministic functions of \code{param}, with captured values held fixed.
+Observed-state \code{impact} functions are also supported without Jacobians.
+Observed baselines and sequential state-dependent impacts are also supported
+as described below. Mark densities and residual distributions are excluded.
+Supplied \code{grad} and \code{hess} are retained. Standalone \code{logLik()} also uses C++
+for parameter-only component functions, observed baselines, and observed or
+sequential state-dependent impacts, including restored fitted models. Automatic
+fallback through \code{...} assumes deterministic callbacks with fixed captures;
+it may evaluate a callback again when an unsupported state read is detected.
+
+Observed-state \code{impact} functions may use \code{n}, \code{N}, \code{Nc}, \code{mark}, \code{type},
+\code{inter_arrival}, and the resolved \code{mu}, \code{alpha}, and \code{beta} matrices.
+They return a finite, plain numeric matrix with the kernel dimensions. As in the R
+likelihood, \code{N[n, ]} and \code{Nc[n, ]} include the current event; use row \code{n - 1}
+for counts before it. The impact is added after evaluating that event's intensity,
+only in columns selected by its type. The last event ends the likelihood window.
+Automatic initialization uses the existing \code{mu}/\code{alpha}/\code{beta} rule; the
+additional impact does not enter that rule.
+
+With \code{gradient = "analytic"}, \code{jacobian$impact} is a matrix or a function with
+the same observed context.
+Its \code{param} argument receives the full named optimization vector, whereas
+the impact function itself receives its local \code{param} vector as before.
+Rows follow \code{as.vector(impact(...))}; columns must include every fitted parameter
+name, with zeros for no effect. Return the total derivative of the impact matrix,
+including any dependence through \code{mu}, \code{alpha}, or \code{beta}. Contributions for
+shared names belong in the same column. This convention differs from the local
+Jacobians for parameter-only components. A Jacobian is required even when the
+impact has no local parameters; a parameter-independent impact has a zero matrix.
+
+Declare needed \code{N} and \code{Nc} arguments explicitly in the impact function, or
+supply these paths. Captured inputs must be fixed, and callbacks must be
+deterministic. Ignored \code{...} is allowed. Observed-only precomputation cannot
+read \code{lambda}, \code{lambda_component}, or \code{lambda_component_n}, including through
+\code{...}. Analytic current-component feedback requires the explicit declaration
+and state Jacobian described below. A callback
+that forces all of \code{...} also forces these unavailable states and produces an
+error. R evaluates impacts and Jacobians; Rcpp computes intensity recursions,
+component scores, and reverse sensitivities to event impacts. Temporary storage
+grows with observations times kernel components, without an additional
+observations-by-components-by-parameters array. Standalone \code{logLik()} also
+supports these observed-state callbacks without Jacobians. Default fitting uses
+C++ for supported callbacks with
+numerical differentiation and requires no Jacobian.
+
+With the C++ engine, \code{mu} may depend on observed
+\code{n}, \code{N}, \code{Nc}, \code{mark}, \code{type}, and \code{inter_arrival}. Return a plain numeric
+dimensions-by-one matrix, constant over each inter-event interval. The call
+at index \code{n} supplies the baseline for the interval ending at event \code{n} and
+that event's intensity; use counts at \code{n - 1} for its predictable baseline.
+Initial values use \code{mu(n = 1)}. Latent-intensity dependencies and within-interval
+changes are unsupported for these baselines. Ignored \code{...} is allowed.
+
+Numerical C++ fitting also supports an \code{impact} that explicitly declares
+\code{lambda_component_n}, \code{lambda}, or \code{lambda_component}. Rcpp calls it after
+computing the current event's intensity and before applying its jumps.
+\code{lambda_component_n} is the dimensions-by-kernels matrix just before the jump.
+\code{lambda} and \code{lambda_component} are allocated only when explicitly declared;
+they contain the initial and current pre-jump rows, with future rows zero.
+Component histories use the R engine's row-major column order and names.
+Retained callback arguments are snapshots. Prefer \code{lambda_component_n} when
+only the current state is needed. A full component history has storage
+proportional to events times dimensions times kernels. If callbacks retain
+history arguments, snapshot-preserving copies can make cumulative allocations
+grow quadratically with event count;
+this is separate from peak live memory. Current-state callbacks avoid this
+history cost. Numerical differentiation repeats it at each likelihood evaluation.
+Undeclared latent access through \code{...} does not select this sequential path.
+When \code{mu} is an observed-baseline function, the impact's \code{mu} argument is the
+parameter-bound function, as in the R engine. Callbacks must be deterministic
+and keep captured inputs fixed. Analytic gradients support current-component
+feedback with the derivatives below; full intensity histories require numerical
+differentiation.
+
+For an observed baseline with \code{gradient = "analytic"}, supply \code{jacobian$mu}
+as a matrix or function receiving the observed context. Its \code{param} is the
+full named optimization vector. Return a dimensions-by-parameters matrix
+with a column for every fitted parameter, including zero columns. Include
+dependencies through resolved \code{alpha} and \code{beta}. The baseline value function
+keeps its local parameter vector. The baseline Jacobian at \code{n = 1} also enters
+the derivative of automatic initialization. Declare needed \code{N} and \code{Nc} in
+the value function or supply their paths.
+
+An analytic impact that explicitly declares \code{lambda_component_n} requires
+\code{jacobian$impact = list(param = ..., state = ...)}. Each entry is a constant
+matrix or function receiving the same observed and current-component context.
+The Jacobians' \code{param} is the full named optimization vector. The \code{param}
+matrix has one row per impact entry and one named column per fitted parameter;
+differentiate the impact while holding \code{lambda_component_n} fixed, including
+direct dependencies through core components. The \code{state} matrix is square,
+with rows for impact entries and columns for current-component entries, both
+in \code{as.vector()} column-major order. It contains the partial derivative of
+the impact with respect to that pre-jump state. The package propagates state
+sensitivities through decay, event jumps, and initial components. Do not add
+those propagated effects again to the supplied \code{param} Jacobian.
+All Jacobians must be finite numeric matrices of constant dimensions.
+Derivatives must exist along the evaluated parameter path. Branches based
+only on observations are allowed; parameter-dependent discontinuities and
+arbitrary reads of \code{lambda} or \code{lambda_component} are unsupported.
+Current-state sensitivity storage grows with kernel components times fitted
+parameters. An observed baseline Jacobian path also grows with observations
+times dimensions times parameters. No derivative history of all kernel states
+is stored. Jacobians are evaluated only when a gradient is requested.
+
+The default uses numerical differentiation and does not run
+additional curvature checks. With \code{final_hessian = "stable"}, final curvature is
+checked after optimization without changing coefficients, log-likelihood,
+the stored optimizer gradient, return code, or iteration count.
+The stabilization selects difference steps and checks their consistency.
+If default numerical Hawkes standard errors contain \code{NaN}, a short message
+suggests this option.
+
+The requested stabilization compares information, inverse information, and
+standard errors across difference steps. Failed checks, singular or indefinite
+information, and equality or nearby inequality constraints yield \code{NA} covariance
+for free parameters. Fixed parameters retain zero covariance. Supplied Hessians
+are retained and checked for invertible positive information. No ridge or
+eigenvalue clipping is applied. Use \code{\link[=fit_diagnostics]{fit_diagnostics()}} to inspect the reason.
+A numerically stable Hessian does not establish identifiability, stationarity,
+a global maximum, or correct confidence-interval coverage. Weak excitation,
+nearby kernel decay rates, short samples, boundary estimates, and nonsmooth
+callbacks can make Wald inference unreliable. Consider profile likelihood and
+a bootstrap that preserves the observation design and initial state.
+
+\code{\link[=fitted_hspec]{fitted_hspec()}} uses the saved parameter map to restore the estimated model.
+\code{\link[=fit_initial_state]{fit_initial_state()}} retrieves the observation window's initial-state arguments.
+These are suitable for re-evaluating the likelihood and starting a new simulation.
+Keep observations separately and supply them again for inference. The stored
+optimization objective can retain data in its function environment.
+Save the fit with \code{saveRDS()} to retain its model, parameter map, and initial-state information.
 }
 \examples{
+\dontshow{if (requireNamespace("maxLik", quietly = TRUE)) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
 
 # example 1
 mu <- c(0.1, 0.1)
@@ -104,8 +395,46 @@ alpha <- matrix(c(0.2, 0.1, 0.1, 0.2), nrow=2, byrow=TRUE)
 beta <- matrix(c(0.9, 0.9, 0.9, 0.9), nrow=2, byrow=TRUE)
 h <- new("hspec", mu=mu, alpha=alpha, beta=beta)
 res <- hsim(h, size=100)
-summary(hfit(h, inter_arrival=res$inter_arrival, type=res$type))
+fit <- hfit(h, inter_arrival = res$inter_arrival, type = res$type)
+summary(fit)
+# Optional Rcpp gradient for this numeric specification:
+# hfit(h, res$inter_arrival, res$type, gradient = "analytic")
+fit_diagnostics(fit)$status
+estimated <- fitted_hspec(fit)
+initial <- fit_initial_state(fit)
+inferred <- do.call(logLik, c(list(object = estimated,
+  inter_arrival = res$inter_arrival, type = res$type, infer = TRUE), initial))
+c(fitted = as.numeric(logLik(fit)), restored = inferred$loglikelihood)
 
+
+# A parameter-only function can keep selected entries fixed at zero.
+alpha_fun <- function(param = c(a = 0.2, b = 0.1)) {
+  matrix(c(param["a"], 0, param["b"], param["a"]), 2)
+}
+alpha_jac <- cbind(a = c(1, 0, 0, 1), b = c(0, 0, 1, 0))
+h_fun <- new("hspec", mu = mu, alpha = alpha_fun, beta = beta)
+# hfit(h_fun, res$inter_arrival, res$type, gradient = "analytic",
+#      jacobian = list(alpha = alpha_jac))
+
+# Default auto selects C++ with numerical differentiation; no Jacobian:
+# fit_fun <- hfit(h_fun, res$inter_arrival, res$type)
+
+# Observed counts can change the excitation after an event.
+count_impact <- function(param = c(a = 0.2), n, N, ...) {
+  matrix(param["a"] * (1 + 0.2 * (N[n, 1] \%\% 2)))
+}
+count_jac <- function(param, n, N, ...) {
+  out <- matrix(0, 1, length(param), dimnames = list(NULL, names(param)))
+  out[, "a"] <- 1 + 0.2 * (N[n, 1] \%\% 2)
+  out
+}
+h_count <- new("hspec", mu = 0.3,
+  alpha = function(param = numeric(0)) matrix(0), beta = 1.2,
+  impact = count_impact)
+# hfit(h_count, inter_arrival, gradient = "analytic",
+#      jacobian = list(impact = count_jac))
+# Or keep numerical differentiation without a Jacobian:
+# hfit(h_count, inter_arrival)
 
 # example 2
 \donttest{
@@ -169,7 +498,9 @@ fit <- hfit(h1,
 summary(fit)
 }
 # For more information, please see vignettes.
+\dontshow{\}) # examplesIf}
 }
 \seealso{
+\code{\link[=fit_diagnostics]{fit_diagnostics()}}, \code{\link[=fitted_hspec]{fitted_hspec()}}, \code{\link[=fit_initial_state]{fit_initial_state()}}, \code{\link[=logLik]{logLik()}},
 \code{\link{hspec-class}}, \code{\link{hsim,hspec-method}}
 }

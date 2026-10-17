@@ -4,12 +4,12 @@
 \name{hsim}
 \alias{hsim}
 \alias{hsim,hspec-method}
-\title{Simulate multivariate Hawkes process with exponential kernel.}
+\title{Simulate an Exponential Hawkes Process}
 \usage{
 hsim(
   object,
   size = 100,
-  lambda_component0 = NULL,
+  lambda_component0 = "auto",
   N0 = NULL,
   Nc0 = NULL,
   verbose = FALSE,
@@ -19,7 +19,7 @@ hsim(
 \S4method{hsim}{hspec}(
   object,
   size = 100,
-  lambda_component0 = NULL,
+  lambda_component0 = "auto",
   N0 = NULL,
   Nc0 = NULL,
   verbose = FALSE,
@@ -29,29 +29,79 @@ hsim(
 \arguments{
 \item{object}{\code{\link{hspec-class}}. S4 object that specifies the parameter values.}
 
-\item{size}{Number of observations.}
+\item{size}{Positive integer giving the number of output rows, including the
+initial state. At most \code{size - 1} events are simulated.}
 
-\item{lambda_component0}{Initial values for the lambda component \eqn{\lambda_{ij}}.
-Can be a numeric value or a matrix.
-Must have the same number of rows and columns as \code{alpha} or \code{beta} in \code{object}.}
+\item{lambda_component0}{Initial intensity components \eqn{\lambda_{ij}(0)},
+excluding the baseline \code{mu}.
+A finite scalar is expanded to every kernel component. A matrix must match
+the shape of \code{alpha} and \code{beta}. The default \code{"auto"} (also \code{NULL}) uses
+unconditional component means for supported stable constant numeric linear models,
+and zero components otherwise. \code{"mean"} requires supported finite means;
+\code{"zero"} starts from baseline intensities. Selection is reported once, and
+zero initialization recommends supplying components explicitly.
+Other size adjustments are
+deprecated and produce a warning.
+Mean initialization excludes nonzero \code{eta}, impact callbacks and custom
+residual distributions. Function-valued core parameters use zero in \code{"auto"}.}
 
-\item{N0}{Starting values of N with default value 0.}
+\item{N0}{Initial event counts: a finite scalar or one value per event type.
+The default is zero.}
 
-\item{Nc0}{Starting values of Nc with default value 0.}
+\item{Nc0}{Initial mark totals: a finite scalar or one value per event type.
+The default is zero.}
 
-\item{verbose}{Logical. If \code{TRUE}, print progress messages during the simulation. Default is \code{FALSE}.}
+\item{verbose}{Logical. Controls additional progress output; initialization
+selection is reported independently. Default is \code{FALSE}.}
 
 \item{...}{Further arguments passed to or from other methods.}
 }
 \value{
-\code{\link{hreal}} S3-object, summary of the Hawkes process realization.
+An S3 \code{\link{hreal}} object containing the simulated path,
+counting processes, and intensity components.
+If no further event can occur, the result contains only the generated rows
+and a warning reports the early termination. The initial row is included.
 }
 \description{
-The method simulate multivariate Hawkes processes.
-The object \code{\link{hspec-class}} contains the parameter values such as \code{mu}, \code{alpha}, \code{beta}.
-The mark (jump) structure may or may not be included.
-It returns an object of class \code{\link{hreal}} which contains \code{inter_arrival}, \code{arrival},
-\code{type}, \code{mark}, \code{N}, \code{Nc}, \code{lambda}, \code{lambda_component}, \code{rambda}, \code{rambda_component}.
+Simulate a univariate or multivariate path from an \code{\link{hspec-class}}
+specification, including marked and multi-kernel models.
+}
+\details{
+The first row is the initial state. Its \code{inter_arrival}, \code{type}, and \code{mark}
+entries are zero; its \code{N} and \code{Nc} rows contain \code{N0} and \code{Nc0}.
+Event types identify intensity rows. After a type \code{i} event, \code{type_col_map[[i]]}
+selects the kernel columns to update; without a mapping, column \code{i} is updated.
+
+Simulation requires finite, nonnegative baselines. Signed kernel components
+are allowed when their sum is nonnegative and decreasing between events.
+For equal decay rates within a row, this requires a nonnegative row sum.
+For unequal rates, the simulator uses a sufficient condition: group components
+by decay rate, multiply each group sum by its rate, and check that cumulative
+sums in increasing rate order are nonnegative.
+
+Simulation automatically uses an Rcpp event loop for plain numeric \code{mu},
+\code{alpha}, and \code{beta}, including functions with exactly one \code{param} argument
+resolved to such values, and positive baselines in every dimension. This includes
+multivariate and mapped multi-kernel models with equal or unequal decay rates
+within a row. Equal-rate models use direct arrival sampling; unequal-rate
+models retain the R algorithm's thinning and rejected draws. Equal-rate models
+also support numeric \code{eta}, \code{rmark} functions requesting no event context, and
+\code{impact} functions requesting only \code{lambda_component_n} or no event context.
+Other optional arguments keep their defaults. Marks and impact components must
+be real numeric values. User functions still run in R; RNG state is synchronized
+before and after every call, including errors. Other event callbacks, \code{...},
+event-dependent baselines, custom residual distributions, zero baselines, and
+callback models with unequal rates use R. This selection is independent of \code{emhawkes.engine},
+which controls likelihood calculations. Both paths use R's RNG in the same order.
+Arrival calculations use the current component state.
+Callbacks receive the arguments they request; callbacks with \code{...} continue
+to receive the full supported context. Requesting full histories can increase
+copying costs for long paths.
+
+To simulate an estimated model, use \code{\link[=fitted_hspec]{fitted_hspec()}} and
+pass \code{\link[=fit_initial_state]{fit_initial_state()}} to \code{hsim()} with \code{do.call()}. These arguments describe
+the start of the fitted observation window. Continuing after its last event
+requires the state at that event.
 }
 \examples{
 
@@ -70,4 +120,7 @@ h <- new("hspec", mu=mu, alpha=alpha, beta=beta)
 res <- hsim(h, size=100)
 print(res)
 
+}
+\seealso{
+\code{\link[=fitted_hspec]{fitted_hspec()}}, \code{\link[=fit_initial_state]{fit_initial_state()}}, \code{\link[=logLik]{logLik()}}
 }

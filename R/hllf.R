@@ -1,80 +1,196 @@
-#' @include hspec.R hmoment.R
+#' @include hspec.R hmoment.R hinterface.R
 NULL
 
 #' Compute the Log-Likelihood Function
 #'
-#' Calculates the log-likelihood for the Hawkes model.
+#' Evaluate a specified model's likelihood, with optional intensity and residual paths.
 #'
 #' @param object An \code{\link{hspec-class}} object containing parameter values for computing the log-likelihood.
 #' @param inter_arrival A vector of inter-arrival times for events across all dimensions, starting with zero.
 #' @param type A vector indicating the dimensions, represented by numbers (1, 2, 3, etc.), starting with zero.
 #' @param mark A vector of mark (jump) sizes, starting with zero.
-#' @param N A matrix representing counting processes.
-#' @param Nc A matrix of counting processes weighted by mark sizes.
-#' @param lambda_component0 Initial values for the lambda component \eqn{\lambda_{ij}}.
-#' Can be a numeric value or a matrix.
-#' Must have the same number of rows and columns as \code{alpha} or \code{beta} in \code{object}.
-#' @param N0 A matrix of initial values for \code{N}.
-#' @param Nc0 A matrix of initial values for \code{Nc}.
-#' @param infer Logical
+#' @param N Optional cumulative event-count matrix, with one row per input row
+#' and one column per event type. Each row contains counts after that event.
+#' @param Nc Optional cumulative mark-total matrix with the same shape as `N`.
+#' @param lambda_component0 Initial intensity components \eqn{\lambda_{ij}(0)},
+#' excluding the baseline `mu`.
+#' A finite scalar is expanded to every kernel component. A matrix must match
+#' the shape of `alpha` and `beta`. `"auto"` (also `NULL`) selects unconditional
+#' component means for supported stable constant numeric linear models, and zero
+#' otherwise. `"mean"` requires supported finite means; `"zero"` fixes zero
+#' components. The selected rule is reported once.
+#' Mean initialization excludes nonzero `eta`, impact callbacks and custom
+#' residual distributions. Function-valued core parameters use zero in `"auto"`.
+#' @param N0 Initial event counts: a finite scalar or one value per event type.
+#' If omitted, use the first row of supplied `N`, or zero when `N` is absent.
+#' @param Nc0 Initial mark totals: a finite scalar or one value per event type.
+#' If omitted, use the first row of supplied `Nc`, or zero when `Nc` is absent.
+#' @param infer Logical; if `TRUE`, return intensity paths and residual processes
+#' together with the likelihood.
 #' @param ... Additional arguments passed to or from other methods.
 #'
-#' @seealso \code{\link{hspec-class}}, \code{\link{hfit,hspec-method}}
+#' @return With `infer = FALSE`, a length-one numeric vector named `loglikelihood`.
+#' With `infer = TRUE`, a list containing:
+#' * `loglikelihood`: the same likelihood value.
+#' * `lambda` and `rambda`: intensity matrices immediately before and after events.
+#' * `lambda_component` and `rambda_component`: the corresponding kernel components,
+#'   with columns ordered by intensity row, then kernel column.
+#' * `res_process1`, ..., `res_processD`: residuals between successive events of
+#'   each type. Types with fewer than two events have empty residual vectors.
+#'
+#' Intensity matrices include the initial row. For residual-distribution models,
+#' `res_process` values use the specified distribution and `eres_process1`, ...,
+#' `eres_processD` give their unit-exponential transforms.
+#'
+#' @details
+#' The first row represents the initial state and is not an event.
+#' Omit `type` for a univariate model and `mark` for unit marks. The observation
+#' vectors have the same length. The likelihood ends at the last supplied event.
+#' Counting-process rows contain values after the corresponding event.
+#' Supplied `N` and `Nc` matrices must agree with `type`, `mark`, and any
+#' supplied initial counts. Event order is preserved, including zero intervals.
+#' Component functions receive the arguments they declare; functions with `...`
+#' receive the available event context. Intensity histories are `NULL` before
+#' initialization. Baseline functions use `n - 1` to access the preceding event.
+#' If initial intensity components are omitted, they are determined from the
+#' supplied model. For a fitted model, use [fitted_hspec()] with the arguments
+#' returned by [fit_initial_state()] to preserve the fit's initialization setting.
+#'
+#' With the default automatic selection, standalone `logLik()` uses the Rcpp
+#' engine for numeric Hawkes specifications and parameter-only component functions.
+#' These functions have only `param` as an argument and return plain numeric
+#' matrices. Their defaults are evaluated as in the R engine; no Jacobian is
+#' required. This supports likelihood values and, with `infer = TRUE`, intensity
+#' paths and residuals. Captured inputs must remain fixed and callbacks must be
+#' deterministic. Observed-state `impact` functions may also use `n`, `N`, `Nc`,
+#' marks, types, times and resolved core matrices. They must return finite plain
+#' numeric matrices matching the kernel dimensions. Each function retains its own
+#' default parameters; standalone evaluation does not apply fitting's sharing rules.
+#' Observed baseline functions may use event context, excluding latent intensities,
+#' and return finite nonnegative dimensions-by-one matrices. Sequential impacts
+#' may explicitly request `lambda`, `lambda_component`, or `lambda_component_n`.
+#' They receive the state before the jump. The last post-event intensity uses
+#' the next baseline, as in R. Mark densities, residual distributions, unsupported
+#' function signatures, and classed numeric inputs use the R engine. `rmark` and `rresidual` are simulation generators and
+#' do not by themselves prevent numeric likelihood acceleration.
+#' Set `options(emhawkes.engine = "r")` for the R calculation, `"auto"` for
+#' automatic selection, or `"cpp"` to require a supported specification.
+#' Setting `"cpp"` is not needed for automatic acceleration. The engine supports
+#' unequal decay rates within a row and multi-kernel mappings. During fitting,
+#' [hfit()] also supports C++ adapters for the callback models documented there.
+#' Engine selection does not change simulation or enable analytic gradients.
+#' Automatic capability fallback may evaluate impact callbacks again. User errors
+#' propagate; deterministic callbacks with fixed captured inputs are required.
+#'
+#' @seealso [fitted_hspec()], [fit_initial_state()],
+#' \code{\link{hspec-class}}, \code{\link{hfit,hspec-method}}
 #'
 #' @docType methods
 #' @rdname logLik
+#' @aliases logLik
 #'
 #' @export
 setMethod(
   f="logLik",
   signature(object="hspec"),
   function(object, inter_arrival, type = NULL, mark = NULL, N = NULL, Nc = NULL,
-           N0 = NULL, Nc0 = NULL, lambda_component0 = NULL,
+           N0 = NULL, Nc0 = NULL, lambda_component0 = "auto",
            infer = FALSE, ...){
 
     additional_argument <- list(...)
     if ("lambda0" %in% names(additional_argument)) {
 
-      warning("lambda0 is deprecated; instead use lambda_component0.")
+      warning("'lambda0' is deprecated; use 'lambda_component0' instead.", call. = FALSE)
 
       lambda_component0 <- additional_argument[["lambda0"]]
 
     }
 
+    callbacks <- model_callback_plans(object)
+    observation <- normalize_observation(object, inter_arrival, type, mark, N, Nc, N0, Nc0)
+    # The selected engine resolves function-valued beta once. A zero scalar or
+    # explicit state can be normalized there without an extra callback/RNG draw.
+    kernels <- if (is.function(object@beta)) NULL else ncol(object@beta)
+    initialization <- select_hawkes_initial(object, lambda_component0, kernels)
+    if (!("showWarning" %in% names(additional_argument))) message_hawkes_initial(initialization)
+    loglik_hspec(object, observation, initialization$value, infer, callbacks,
+                 show_initial_message = FALSE)
+  }
+)
+
+# Internal entry point for observations already checked by hfit.
+loglik_hspec <- function(object, observation, lambda_component0 = NULL, infer = FALSE,
+                         callbacks = model_callback_plans(object), show_initial_message = TRUE,
+                         engine = getOption("emhawkes.engine", "auto"), execution = NULL, replay = TRUE) {
+    engine <- match.arg(engine, c("auto", "r", "cpp"))
+    values <- NULL
+    if (engine != "r") {
+      reason <- native_hawkes_reason(object, observation)
+      if (replay && !is.null(reason) && standalone_hawkes_supported(object, observation)) {
+        values <- setting(object)
+        functions <- vapply(list(mu = object@mu, alpha = object@alpha,
+          beta = object@beta, eta = object@eta), is.function, logical(1))
+        plain <- vapply(values[functions & !vapply(values, is.function, logical(1))],
+          function(x) is.numeric(x) && is.matrix(x) && !is.object(x), logical(1))
+        reason <- if (all(plain)) native_hawkes_reason(object, observation, values,
+          allow_impact = TRUE, allow_baseline = TRUE) else
+          "function components must return plain numeric matrices"
+      }
+      if (is.null(reason)) {
+        if (is.null(object@impact) && !is.function(values$mu)) return(loglik_hspec_cpp(object, observation,
+          lambda_component0, infer, show_initial_message, values, execution))
+        result <- tryCatch(loglik_hspec_cpp(object, observation, lambda_component0,
+          infer, show_initial_message, values, execution),
+          emhawkes_cpp_unsupported = function(e) e)
+        if (!inherits(result, "emhawkes_cpp_unsupported")) return(result)
+        reason <- conditionMessage(result)
+        if (!is.null(result$initial)) {
+          lambda_component0 <- result$initial
+          show_initial_message <- FALSE
+        }
+      }
+      if (engine == "cpp") stop("C++ Hawkes engine does not support this model: ", reason, call. = FALSE)
+    }
+    record_fit_engine(execution, "r", if (engine == "auto") reason else NULL)
+    loglik_hspec_r(object, observation, lambda_component0, infer, callbacks,
+                    show_initial_message, values)
+}
+
+# Keep the R implementation as the general callback engine and reference.
+loglik_hspec_r <- function(object, observation, lambda_component0 = NULL, infer = FALSE,
+                           callbacks = model_callback_plans(object), show_initial_message = TRUE, values = NULL) {
+
     ## Parameter setting and initialization
     # after parameter setting, functions mu, alpha, beta become matrices, if possible
     # Note that mu, alpha, beta, eta can be given functions even they are essentially matrices.
-    plist <- setting(object)
+    plist <- if (is.null(values)) setting(object) else values
     # mu, alpha, beta, eta
     list2env(plist, envir = environment())
 
+    inter_arrival <- observation$inter_arrival
+    type <- observation$type
+    mark <- observation$mark
+    N <- observation$N
+    Nc <- observation$Nc
     size <- length(inter_arrival)
-
-    # When the mark sizes are not provided, the jumps are all unit jumps
-    if(is.null(mark)) mark <- rep(1, size)
-
-    if (is.null(type)) {
-      if (object@dimens != 1) stop("The argument type should be provided.")
-      type <- rep(1, size)
-    }
+    lambda <- lambda_component <- lambda_component_n <- NULL
+    mu_call <- prepare_component_call(callbacks$mu)
+    impact_call <- prepare_component_call(callbacks$impact)
+    dmark_call <- prepare_component_call(callbacks$dmark)
 
     # check the argument lists in mu and impact
     mu_args <- impct_args <- c()
-    if(is.function(mu) && length(formals(mu)) > 1) mu_args <- methods::formalArgs(mu)
+    if(is.function(mu)) mu_args <- methods::formalArgs(mu)
     if(!is.null(object@impact)) impct_args <- methods::formalArgs(object@impact)
-
-    # N and Nc are constructed only if they are needed.
-    if("N" %in% c(impct_args, mu_args) && is.null(N)) N <- type_to_N(type, object@dimens, N0 = N0)
-    if("Nc" %in% c(impct_args, mu_args) && is.null(Nc)) Nc <- type_mark_to_Nc(type, mark, object@dimens, Nc0 = Nc0)
+    mark_args <- if (is.function(object@dmark)) methods::formalArgs(object@dmark) else character(0)
+    history_args <- c(impct_args, mu_args, mark_args)
+    impact_has_dots <- "..." %in% impct_args
 
 
     if (is.function(mu)){
 
-      mu0 <- mu(n = 1, mark = mark, type = type, inter_arrival = inter_arrival,
-                N = N, Nc = Nc,
-                lambda = lambda, lambda_component = lambda_component,
-                lambda_component_n = lambda_component_n,
-                alpha = alpha, beta = beta)
+      mu0 <- mu_call(mu, 1, mark, type, inter_arrival, N, Nc, lambda,
+                   lambda_component, lambda_component_n, mu, alpha, beta)
 
 
     } else{
@@ -84,14 +200,6 @@ setMethod(
 
     # ---- Lambda component0 check & setup ----
     if (is.null(lambda_component0)) {
-      if (length(object@type_col_map) > 0) {
-        stop("In this model, please provide lambda_component0.")
-      }
-
-      if (!("showWarning" %in% names(additional_argument))) {
-        message("The initial values for intensity processes are not provided. Internally determined initial values are used.\n")
-      }
-
       lambda_component0 <- get_lambda0(
         object,
         mark = mark,
@@ -103,10 +211,12 @@ setMethod(
         beta = beta
       )
     }
+    lambda_component0 <- normalize_lambda_initial(lambda_component0, object@dimens, ncol(beta))
+    lambda_component_n <- lambda_component0
 
     # ---- Determine necessity for lambda/lambda_component ----
-    is_lambda_necessary <- infer || "lambda" %in% c(impct_args, mu_args)
-    is_lambda_component_necessary <- infer || "lambda_component" %in% c(impct_args, mu_args)
+    is_lambda_necessary <- infer || "lambda" %in% history_args
+    is_lambda_component_necessary <- infer || "lambda_component" %in% history_args
 
     # ---- lambda_component ----
     if (is_lambda_component_necessary) {
@@ -154,14 +264,7 @@ setMethod(
 
       # historical right-continuous version of mus
       rmus <- matrix(nrow = length(inter_arrival), ncol = object@dimens)
-      rmus[1, ] <-  if (is.function(mu)) {
-        mu(n = 1, mark = mark, type = type, inter_arrival = inter_arrival,
-           N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
-           lambda_component_n = lambda_component_n,
-           alpha = alpha, beta = beta)
-      } else {
-        mu
-      }
+      rmus[1, ] <- mu0
     }
 
 
@@ -174,13 +277,11 @@ setMethod(
 
 
     # ---- Evaluate piecewise constant mu (only supported form) ----
-    rmu_n <- if (is.function(mu)) {
-      mu(n = 2, mark = mark, type = type, inter_arrival = inter_arrival,
-         N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
-         lambda_component_n = lambda_component_n,
-         alpha = alpha, beta = beta)
+    rmu_n <- if (is.function(mu) && size > 1L) {
+      mu_call(mu, 2, mark, type, inter_arrival, N, Nc, lambda,
+                   lambda_component, lambda_component_n, mu, alpha, beta)
     } else {
-      mu
+      mu0
     }
 
 
@@ -191,21 +292,52 @@ setMethod(
 
     rambda_component_n <- lambda_component0
 
-
-
+    # Decay and integration weights depend only on beta and observed intervals.
+    # Bound the temporary tables; custom numeric classes keep their own operators.
+    cache_kernels <- !is.object(beta) && !is.object(inter_arrival) &&
+      length(beta) <= 8192L && size >= 32L
+    cache_end <- 1L
+    if (cache_kernels) {
+      kernel_attributes <- attributes(beta)
+      scalar_kernel <- length(beta) == 1L && identical(names(kernel_attributes), "dim")
+      rates <- as.vector(beta)
+      block_size <- max(1L, 65536L %/% length(rates))
+    }
 
     ## main loop
-    for (n in 2:size) {
+    for (n in seq_len(size - 1L) + 1L) {
 
       mu_n <- rmu_n; rambda_component_n_minus_1 <- rambda_component_n
 
       type_n <- type[n]
 
-      decayed <- exp(-beta * inter_arrival[n])
-
-
-      # lambda decayed due to time, impact due to mark is not added yet
-      lambda_component_n <- rambda_component_n_minus_1 * decayed
+      if (cache_kernels) {
+        if (n > cache_end) {
+          cache_start <- n - 1L
+          cache_end <- n + min(block_size - 1, size - n)
+          block_dt <- inter_arrival[seq.int(n, cache_end)]
+          scaled_time <- outer(rates, block_dt)
+          cached_decay <- exp(-scaled_time)
+          cached_weight <- -expm1(-scaled_time) / rates
+          zero <- which(scaled_time == 0)
+          cached_weight[zero] <- block_dt[(zero - 1L) %/% length(rates) + 1L]
+        }
+        index <- n - cache_start
+        decayed <- cached_decay[, index]
+        weight <- cached_weight[, index]
+        if (!scalar_kernel) {
+          attributes(decayed) <- kernel_attributes
+          attributes(weight) <- kernel_attributes
+        }
+        lambda_component_n <- rambda_component_n_minus_1 * decayed
+        integrated_component <- rambda_component_n_minus_1 * weight
+        integrated_component[rambda_component_n_minus_1 == 0] <- 0
+      } else {
+        decayed <- exp(-beta * inter_arrival[n])
+        lambda_component_n <- rambda_component_n_minus_1 * decayed
+        integrated_component <- integrate_exp_kernel(rambda_component_n_minus_1,
+                                                      beta, inter_arrival[n])
+      }
 
       # integrate mu over inter_arrival w.r.t. time
       if ((is.matrix(mu_n) && nrow(mu_n) == object@dimens && ncol(mu_n) == 1) ||
@@ -231,7 +363,7 @@ setMethod(
         # basic model and do not need to infer
         ## 1. sum of integrated_lambda_component and sum of mu * inter_arrival
         ## In the log-likelihood calculation, a negative sign is applied, so it's subtracted here.
-        sum_log_f_epsilon_phi <- sum_log_f_epsilon_phi - sum(rambda_component_n_minus_1 / beta * (1 - decayed)) - sum(integrated_mu)
+        sum_log_f_epsilon_phi <- sum_log_f_epsilon_phi - sum(integrated_component) - sum(integrated_mu)
 
 
       } else if (is.null(object@dresidual)) {
@@ -239,9 +371,8 @@ setMethod(
         # basic model and need to infer
         for (k in 1:object@dimens){
 
-          phi_k_wo_mu <- phi_wo_mu(tau = inter_arrival[n],
-                                   rowSum_rambda_component_n_miuns_1 = sum(rambda_component_n_minus_1[k, ]),
-                                   beta[k, 1])
+          # Integrate each kernel with its own decay rate.
+          phi_k_wo_mu <- sum(integrated_component[k, ])
 
           # partial residual for k-th dimension
           phi_value_k <- phi_k_wo_mu + integrated_mu[k]
@@ -258,14 +389,17 @@ setMethod(
 
         for (k in 1:object@dimens){
 
-          phi_k_wo_mu <- phi_wo_mu(tau = inter_arrival[n],
-                                   rowSum_rambda_component_n_miuns_1 = sum(rambda_component_n_minus_1[k, ]),
-                                   beta[k, 1])
+          # Integrate each kernel with its own decay rate.
+          phi_k_wo_mu <- sum(integrated_component[k, ])
 
           # partial residual for k-th dimension
           phi_value_k <- phi_k_wo_mu + integrated_mu[k]
 
-          log_value <- suppressWarnings(if (k == type_n) log(object@dresidual(phi_value_k)) else log(1-object@presidual(phi_value_k)))
+          log_value <- suppressWarnings(if (k == type_n) {
+            residual_density(object@dresidual, phi_value_k, log = TRUE)
+          } else {
+            residual_cdf(object@presidual, phi_value_k, lower.tail = FALSE, log.p = TRUE)
+          })
           sum_log_f_epsilon_phi <- sum_log_f_epsilon_phi + log_value
 
           if(infer) phis[n, k] <- phi_value_k
@@ -279,14 +413,15 @@ setMethod(
 
       ## 2. sum of log lambda when jump occurs
       # Calculate sum of log lambda when a jump occurs
-      lambda_at_event <- if (object@dimens == 1) {
-        mu_n + lambda_component_n
-      } else {
-        mu_n[type_n] + sum(lambda_component_n[type_n, ])
-      }
+      lambda_at_event <- mu_n[type_n] + sum(lambda_component_n[type_n, ])
 
-      # Update the sum of log lambda with a warning suppression for log calculation
-      sum_log_lambda <- sum_log_lambda + suppressWarnings(log(lambda_at_event))
+      # Nonnegative ordinary intensities cannot produce a log-domain warning.
+      # Retain warning suppression for invalid proposals and custom Math methods.
+      log_lambda <- if (!is.object(lambda_at_event) && is.double(lambda_at_event) &&
+                        isTRUE(lambda_at_event >= 0)) {
+        log(lambda_at_event)
+      } else suppressWarnings(log(lambda_at_event))
+      sum_log_lambda <- sum_log_lambda + log_lambda
 
 
       if(is_lambda_component_necessary) lambda_component[n, ] <- t(lambda_component_n)
@@ -295,10 +430,8 @@ setMethod(
       ## 3. sum of log mark p.d.f. when jump occurs
       if(!is.null(object@dmark)){
         sum_log_dmark <- sum_log_dmark +
-          log(object@dmark(mark = mark, n = n, type = type, inter_arrival = inter_arrival,
-                           N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
-                           lambda_component_n = lambda_component_n,
-                           mu = mu, alpha = alpha, beta = beta))
+          log(dmark_call(object@dmark, n, mark, type, inter_arrival, N, Nc, lambda,
+                   lambda_component, lambda_component_n, mu, alpha, beta))
 
       }
 
@@ -338,10 +471,13 @@ setMethod(
       if(!is.null(object@impact)){
 
         impact_mark <- zero_mat_for_impact
-        impact_res <- object@impact(n = n, mark = mark, type = type, inter_arrival = inter_arrival,
-                                    N = N, Nc = Nc, lambda = lambda, lambda_component = lambda_component,
-                                    lambda_component_n = lambda_component_n,
-                                    mu = mu, alpha = alpha, beta = beta)
+        impact_res <- if (impact_has_dots) {
+          forceAndCall(12L, object@impact, n = n, mark = mark, type = type,
+                       inter_arrival = inter_arrival, N = N, Nc = Nc, lambda = lambda,
+                       lambda_component = lambda_component, lambda_component_n = lambda_component_n,
+                       mu = mu, alpha = alpha, beta = beta)
+        } else impact_call(object@impact, n, mark, type, inter_arrival, N, Nc, lambda,
+                           lambda_component, lambda_component_n, mu, alpha, beta)
 
         impact_mark[ , types] <- impact_res[ , types]
 
@@ -350,24 +486,20 @@ setMethod(
 
       }
 
-      if(infer){
-
-        rambda_component[n, ] <- t(rambda_component_n)
-        rambda[n, ] <- as.vector(rmu_n) + rowSums(rambda_component_n)
-        rmus[n, ] <- rmu_n
-
-      }
-
-
       # new mu, i.e., right continuous version of mu
       if (is.function(mu)){
         # mu is represented by a function
-        rmu_n <- mu(n = n + 1, mark = mark, type = type, inter_arrival = inter_arrival,
-                   N = N, Nc = Nc,
-                   alpha = alpha, beta = beta)
+        rmu_n <- mu_call(mu, n + 1, mark, type, inter_arrival, N, Nc, lambda,
+                   lambda_component, lambda_component_n, mu, alpha, beta)
       } else{
         # mu is a matrix
         rmu_n <- mu
+      }
+
+      if(infer){
+        rambda_component[n, ] <- t(rambda_component_n)
+        rambda[n, ] <- as.vector(rmu_n) + rowSums(rambda_component_n)
+        rmus[n, ] <- rmu_n
       }
 
 
@@ -394,8 +526,8 @@ setMethod(
         for (k in 1:object@dimens){
 
           # the ordered sequence of indices associated with type k
-          n_k <- which(type == k)
-          res_process <- rep(0, length(n_k) - 1)
+          n_k <- which(type == k & seq_along(type) > 1L)
+          res_process <- numeric(max(0L, length(n_k) - 1L))
 
           for(j in seq_along(res_process)){
             # n_k[j]+1 : index of previous jump + 1
@@ -413,9 +545,9 @@ setMethod(
         for (k in 1:object@dimens){
 
           # the ordered sequence of indices associated with type k
-          n_k <- which(type == k)
-          res_process <- rep(0, length(n_k) - 1)
-          eres_process <- rep(0, length(n_k) - 1)
+          n_k <- which(type == k & seq_along(type) > 1L)
+          res_process <- numeric(max(0L, length(n_k) - 1L))
+          eres_process <- numeric(max(0L, length(n_k) - 1L))
 
           for(j in seq_along(res_process)){
 
@@ -423,11 +555,11 @@ setMethod(
             # n_k[j]+1 : index of previous jump + 1
             # n_k[j+1] : index of current jump
             # F(phi(tau)) = F(epsilon)
-            F_phi_taus <- object@presidual(phis[(n_k[j]+1):n_k[j+1], k])
-
-            res_process[j] <- object@qresidual(1 - prod(1 - F_phi_taus))
-
-            eres_process[j] <- - sum(log(1 - F_phi_taus))
+            log_survival <- sum(residual_cdf(object@presidual,
+              phis[(n_k[j]+1):n_k[j+1], k], lower.tail = FALSE, log.p = TRUE))
+            res_process[j] <- residual_quantile(object@qresidual, log_survival,
+                                               lower.tail = FALSE, log.p = TRUE)
+            eres_process[j] <- -log_survival
 
           }
 
@@ -441,8 +573,7 @@ setMethod(
 
     }
 
-  }
-)
+}
 
 # Helpers: Initialization for lambda matrices
 initialize_lambda_matrix <- function(prefix, size, dimens, beta_cols, lambda0) {

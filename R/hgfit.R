@@ -1,27 +1,28 @@
 #' @include hspec.R hmoment.R utilities.R
 NULL
 
-#' Infer lambda process with given Hawkes model and realized path
+#' Infer Intensity Paths (Deprecated)
 #'
-#' This method compute the inferred lambda process and returns it as \code{hreal} form.
-#' If we have realized path of Hawkes process and its parameter value, then we can compute the inferred lambda processes.
-#' Similarly with other method such as \code{hfit}, the input arguments are \code{inter_arrival}, \code{type}, \code{mark},
-#' or equivalently, \code{N} and \code{Nc}.
+#' Deprecated wrapper for [logLik()] with `infer = TRUE`. Use `logLik()` directly
+#' to compute intensity paths and residual processes from a specified model.
 #'
 #' @param object \code{\link{hspec-class}}. This object includes the parameter values.
 #' @param inter_arrival inter-arrival times of events. This includes inter-arrival for events that occur in all dimensions. Start with zero.
 #' @param type a vector of dimensions. Distinguished by numbers, 1, 2, 3, and so on. Start with zero.
 #' @param mark a vector of mark (jump) sizes. Start with zero.
-#' @param N Hawkes process. If not provided, then generate using inter_arrival and type.
-#' @param Nc mark accumulated Hawkes process. If not provided, then generate using inter_arrival, type and mark.
-#' @param lambda_component0 Initial values for the lambda component \eqn{\lambda_{ij}}.
-#' Can be a numeric value or a matrix.
-#' Must have the same number of rows and columns as \code{alpha} or \code{beta} in \code{object}.
-#' @param N0 the initial values of N.
-#' @param Nc0 the initial values of Nc.
+#' @param N Optional cumulative event-count matrix consistent with `type`.
+#' @param Nc Optional cumulative mark-total matrix consistent with `type` and `mark`.
+#' @param lambda_component0 Initial intensity components \eqn{\lambda_{ij}(0)},
+#' excluding the baseline `mu`.
+#' A scalar is expanded to every kernel component. A matrix must match the
+#' shape of `alpha` and `beta`.
+#' @param N0 Initial event counts: a scalar or one value per event type.
+#' @param Nc0 Initial mark totals: a scalar or one value per event type.
 #' @param ... further arguments passed to or from other methods.
 #'
-#' @return \code{\link{hreal}} S3-object, with inferred intensity.
+#' @return The inference list returned by `logLik(object, infer = TRUE)`.
+#' It contains the likelihood, intensity matrices, and residual vectors.
+#' @seealso [logLik()], [fitted_hspec()], [fit_initial_state()]
 #'
 #' @docType methods
 #' @rdname infer_lambda
@@ -34,8 +35,9 @@ NULL
 #' h <- new("hspec", mu=mu, alpha=alpha, beta=beta)
 #' res <- hsim(h, size=100)
 #' summary(res)
-#' res2 <- infer_lambda(h, res$inter_arrival, res$type)
-#' summary(res2)
+#' inferred <- logLik(h, inter_arrival = res$inter_arrival,
+#'                    type = res$type, infer = TRUE)
+#' head(inferred$lambda)
 #'
 setGeneric("infer_lambda", function(object, inter_arrival = NULL,
                             type = NULL, mark = NULL,
@@ -51,13 +53,13 @@ setMethod(
            N = NULL, Nc = NULL,
            lambda_component0 = NULL, N0 = NULL, Nc0 = NULL, ...){
 
-    warning("The 'infer_lambda' function is deprecated. Please use 'logLik' with 'infer = TRUE' instead.")
+    warning("infer_lambda() is deprecated; use logLik(..., infer = TRUE) instead.", call. = FALSE)
 
 
     infered_res <- logLik(object, inter_arrival = inter_arrival, type = type,
                           mark = mark, N = N, Nc = Nc,  lambda_component0 = lambda_component0,
                           N0 = N0, Nc0 = Nc0,
-                          infer = TRUE)
+                          infer = TRUE, ...)
 
     return(infered_res)
 
@@ -279,10 +281,10 @@ integrate_rambda_component <- function(inter_arrival, rambda_componet, beta, dim
   current_lambda <- matrix(rambda_componet[1,], nrow = dimens, byrow=TRUE)
 
 
-  for (n in 2:size) {
+  for (n in seq_len(size - 1L) + 1L) {
 
     decayed <- exp(-beta * inter_arrival[n])
-    integrated_rambda_component[n,] <- t(current_lambda / beta * ( 1 - decayed ))
+    integrated_rambda_component[n,] <- t(integrate_exp_kernel(current_lambda, beta, inter_arrival[n]))
     new_lambda <- rambda_componet[n,]
     current_lambda <- matrix(new_lambda, nrow=dimens, byrow=TRUE)
 
@@ -328,13 +330,13 @@ integrate_rambda <- function(inter_arrival, rambda_component, mu, beta, dimens,
   }
 
 
-  for (n in 2:size) {
+  for (n in seq_len(size - 1L) + 1L) {
 
     mu_n <- rmu_n
 
     decayed <- exp(-beta * inter_arrival[n])
 
-    integrated_rambda[n, ] <- rowSums(current_lambda / beta * ( 1 - decayed )) +
+    integrated_rambda[n, ] <- rowSums(integrate_exp_kernel(current_lambda, beta, inter_arrival[n])) +
       mu_n * inter_arrival[n]
 
     new_lambda <- rambda_component[n,]
@@ -357,10 +359,11 @@ integrate_rambda <- function(inter_arrival, rambda_component, mu, beta, dimens,
 
 }
 
-#' Compute residual process
+#' Compute a Residual Process (Deprecated)
 #'
-#' Using random time change, this function compute the residual process, which is the inter-arrival time of a standard Poisson process.
-#' Therefore, the return values should follow the exponential distribution with rate 1, if model and rambda are correctly specified.
+#' Legacy helper that integrates a supplied intensity path for one event type.
+#' Use [logLik()] with `infer = TRUE` to compute intensities and residuals together.
+#' For a correctly specified Hawkes model, residual intervals have a unit-exponential distribution.
 #'
 #' @param component The component of type to get the residual process.
 #' @param type A vector of types distinguished by numbers, 1, 2, 3, and so on. Start with zero.
@@ -372,9 +375,18 @@ integrate_rambda <- function(inter_arrival, rambda_component, mu, beta, dimens,
 #' @param mark A vector of realized mark (jump) sizes. Start with zero.
 #' @param N A matrix of counting processes.
 #' @param Nc A matrix of counting processes weighted by mark.
-#' @param lambda_component0 The initial values of lambda component. Must have the same dimensional matrix with \code{hspec}.
+#' @param lambda_component0 Initial intensity components, excluding the baseline
+#' `mu`. Must have the same matrix dimensions as the model's kernel parameters.
 #' @param N0 The initial value of N
 #' @param ... Further arguments passed to or from other methods.
+#'
+#' @return A numeric vector of residual intervals for the selected event type.
+#' @details
+#' This function is deprecated. The replacement `logLik()` returns residuals in
+#' `res_process1`, ..., `res_processD` and handles types with fewer than two events
+#' by returning empty vectors. For fitted parameters, first use [fitted_hspec()]
+#' and preserve initialization with [fit_initial_state()].
+#' @seealso [logLik()], [fitted_hspec()], [fit_initial_state()]
 #'
 #' @examples
 #'
@@ -383,7 +395,9 @@ integrate_rambda <- function(inter_arrival, rambda_component, mu, beta, dimens,
 #' beta <- matrix(c(0.9, 0.9, 0.9, 0.9), nrow=2, byrow=TRUE)
 #' h <- new("hspec", mu=mu, alpha=alpha, beta=beta)
 #' res <- hsim(h, size=1000)
-#' rp <- residual_process(component = 1, res$inter_arrival, res$type, res$rambda_component, mu, beta)
+#' inferred <- logLik(h, inter_arrival = res$inter_arrival,
+#'                    type = res$type, infer = TRUE)
+#' rp <- inferred$res_process1
 #'
 #' @export
 residual_process <- function(component, inter_arrival, type, rambda_component, mu, beta, dimens=NULL,
@@ -391,13 +405,13 @@ residual_process <- function(component, inter_arrival, type, rambda_component, m
                              N = NULL, Nc = NULL,
                              lambda_component0 = NULL, N0 = NULL, ...){
 
-  warning("The 'residual_process' function is deprecated. Please use 'logLik' with 'infer = TRUE' instead.")
+  warning("residual_process() is deprecated; use logLik(..., infer = TRUE) and its res_process fields instead.", call. = FALSE)
 
 
   additional_argument <- list(...)
   if ("lambda0" %in% names(additional_argument)) {
 
-    warning("lambda0 is deprecated; instead use lambda_component0.")
+    warning("'lambda0' is deprecated; use 'lambda_component0' instead.", call. = FALSE)
 
     lambda_component0 <- additional_argument[["lambda0"]]
 
