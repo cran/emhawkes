@@ -1,6 +1,6 @@
-3f63991d3282f4dd524bd5f23b49615a *DESCRIPTION
+ff3e689c0d9c396af2f92ee3177dcfdb *DESCRIPTION
 299b4f2fe32d2a5202ee3909a2c22a64 *NAMESPACE
-acf00080adf0f79d284c1f82ab563844 *NEWS.md
+89ccebebbd1badf4105fc427f6e6137f *NEWS.md
 f43ec9903b43768a3d6c39bf249fc96f *R/RcppExports.R
 b6d2184a0a7c6b16fed33b3e1618046f *R/harrival.R
 14de90a133cd7d75226ed07069f708c8 *R/hengine.R
@@ -25,7 +25,7 @@ b748bf544ded52aecf7f51d95c04ff61 *R/utilities.R
 3304be77a1b6faecac197d649c13863a *build/vignette.rds
 d5b9c83157c1a6c762d3b603ed107900 *inst/doc/example.R
 145b13bb019dd5522041556a124f39f1 *inst/doc/example.Rmd
-5e2b7dc1b4dc94ca2b86575fbf23a852 *inst/doc/example.html
+2265e095aca3bd32588b09b9f5eb1f39 *inst/doc/example.html
 0651d34476e18a167889b59c492a5d15 *man/expected_tau.Rd
 5b8c74ddf5f073cb579d7937f477ee32 *man/fit_diagnostics.Rd
 ee59489ad7262a2c89a824aeac1fa04a *man/fit_initial_state.Rd
@@ -46,12 +46,13 @@ b749021fc7db24d7b3d353cc1a12a31a *src/RcppExports.cpp
 32ad97a6e532b5899b171575df6b110a *src/exp_kernel.h
 f8840ad35641b2e87207ba6cdbbb745a *src/hawkes_baseline.cpp
 6054b9f9511393ae8e135eb8c384d74b *src/hawkes_jacobian.cpp
-dafda9bd46f4750033d08158aed0e856 *src/hawkes_loglik.cpp
-850733498af8edb6c1ca6024ff70c1c4 *src/hawkes_simulate.cpp
-948ea7e4703edb01c92466fff1882ded *src/hawkes_simulate_callbacks.cpp
-60dc957c4f548b97b6119d6ce0bb4578 *src/hawkes_simulate_equal.cpp
+558617c708a25893b48747b6a0cb15f1 *src/hawkes_loglik.cpp
+15b01026f3be42c14637c3e285339ce5 *src/hawkes_simulate.cpp
+30280f425d153c41bb321185ed495bde *src/hawkes_simulate_callbacks.cpp
+668456df2b7d5eeb561631259e7b1362 *src/hawkes_simulate_equal.cpp
 22e0f1a1795f44c092342eb157ae3ffb *src/jacobian_call.h
-7c8980b7c449f1932b5ccf3a26c46735 *src/simulation_state.h
+047e58c44f29b62f44fa3543577e2dcc *src/r_precision.h
+93be61d4f734892e3bdb5111a7e9ab22 *src/simulation_state.h
 e4e10ea701dce6ad6520582ce56dbcd1 *src/state_sensitivity.h
 035c37bb3d44454cd9f412974357c8ab *tests/auto-function-engine.R
 f125a5eb683fba1384a9a05470dd61cb *tests/baseline-dispatch.R
@@ -76,6 +77,7 @@ d0e19c78ca130e8b14e08cb2a33d83d7 *tests/native-callback-simulation.R
 14848ecd478bd852fe46c2aaa9daacff *tests/native-engine.R
 4ca04ebb3bb703829c08a69c9fb0e88a *tests/native-fit.R
 ca415bd9fe2b5a2b0157c8ad586adc59 *tests/native-gradient.R
+7ed93c969ee9df4cfdbdeea9b86f4042 *tests/native-precision.R
 ebce19c4e73c0f05713103eb1915ecf1 *tests/native-simulation.R
 cc447adf90bf355df0733dd1a7731681 *tests/native-unequal-simulation.R
 2e731273051fb400dfcd75ca1d875765 *tests/native-unwind.R

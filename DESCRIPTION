@@ -1,6 +1,6 @@
 Package: emhawkes
 Title: Exponential Multivariate Hawkes Model
-Version: 1.0.1
+Version: 1.0.2
 Authors@R: person("Kyungsub", "Lee", email = "kyungsub@gmail.com", role = c("aut", "cre"))
 Maintainer: Kyungsub Lee <kyungsub@gmail.com>
 Description: Simulate and fit multivariate Hawkes models with exponential
@@ -26,7 +26,7 @@ VignetteBuilder: knitr
 URL: https://github.com/ksublee/emhawkes,
         https://ksublee.github.io/emhawkes/
 BugReports: https://github.com/ksublee/emhawkes/issues
-Packaged: 2026-10-18 01:48:44 UTC; runner
+Packaged: 2026-10-29 11:44:57 UTC; runner
 Author: Kyungsub Lee [aut, cre]
 Repository: CRAN
-Date/Publication: 2026-10-18 10:20:02 UTC
+Date/Publication: 2026-10-29 12:40:02 UTC
